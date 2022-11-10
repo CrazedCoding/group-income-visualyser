@@ -2052,15 +2052,14 @@ user-scalable=no">
     function toggle_pause() {
       if (!window.paused) {
         window.pause_start_time = new Date().getTime() / 1E3
-        $("#play_button").show();
-        $("#pause_button").hide();
+        document.getElementById("play_button").style.display='inline-block';
+        document.getElementById("pause_button").style.display='hidden';
       }
       else {
         window.uniform_start_time += new Date().getTime() / 1E3 - window.pause_start_time
-        show_option("");
-        $("#pause_play_button").html("ll");
-        $("#play_button").hide();
-        $("#pause_button").show();
+        window.show_option("");
+        document.getElementById("play_button").style.display='hidden';
+        document.getElementById("pause_button").style.display='inline-block';
       }
       window.paused = !window.paused;
     }
@@ -2120,7 +2119,7 @@ user-scalable=no">
     function user_leave_event(user_name, when = window.get_time()) {
       window.event_list.push({ type: EVENT_TYPES.LEAVE, name: user_name, when })
       window.event_list = window.event_list.sort((a, b) => a.when - b.when)
-      $('#options_div').hide()
+      document.getElementById('options_div').style.display='hidden'
     }
 
     function user_pay_event(from, to, amount, when = window.get_time()) {
@@ -2130,7 +2129,7 @@ user-scalable=no">
     function user_change_income_event(user_name, income_or_expenses, when = window.get_time()) {
       window.event_list.push({ type: EVENT_TYPES.CHANGE_INCOME, name: user_name, income: income_or_expenses, when })
       window.event_list = window.event_list.sort((a, b) => a.when - b.when)
-      $('#options_div').hide()
+      document.getElementById('options_div').style.display='hidden'
 
     }
     function group_change_income_event(new_mincome, when = window.get_time()) {
@@ -2159,7 +2158,7 @@ user-scalable=no">
     // window.needers = window.needers.sort((a, b) => { return b.need - a.need })
 
     function get_amount() {
-      var amount = Number($("#amount").val())
+      var amount = Number(document.getElementById("amount").value)
       //$("#amount").val(Math.random())
       return amount
     }
@@ -2588,8 +2587,8 @@ user-scalable=no">
 					  	<label style="display:inline-block;">Amount:</label>
 						<input id="have_amount" type="number" value="`+ haver.have + `" step="1" style="display:inline-block; width:64px">`
 
-                show_option("User" + haver.name + ":<br>" + change_pledge +
-                  "<button onclick=\"user_change_income_event(\'" + haver.name + "\', parseFloat($(\'#have_amount\').val()))\">Set Income</button>" +
+                window.show_option("User" + haver.name + ":<br>" + change_pledge +
+                  "<button onclick=\"user_change_income_event(\'" + haver.name + "\', parseFloat(document.getElementById(\'have_amount\').value))\">Set Income</button>" +
                   "<br><button onclick=\"user_leave_event(\'" + name + "\')\">Make Leave</button>");
               }
             }(haver)
@@ -2704,8 +2703,8 @@ user-scalable=no">
 					  	<label style="display:inline-block;">Amount:</label>
 						<input id="need_amount" type="number" value="`+ needer.need + `" step="1" style="display:inline-block; width:64px">`
 
-                show_option("User" + needer.name + ":<br>" + change_pledge +
-                  "<button onclick=\"user_change_income_event(\'" + needer.name + "\', parseFloat($(\'#need_amount\').val()))\">Set Income</button>" +
+                window.show_option("User" + needer.name + ":<br>" + change_pledge +
+                  "<button onclick=\"user_change_income_event(\'" + needer.name + "\', parseFloat(document.getElementById(\'need_amount\').value))\">Set Income</button>" +
                   "<br><button onclick=\"user_leave_event(\'" + name + "\')\">Make Leave</button>");
               }
             }(needer)
@@ -2778,11 +2777,11 @@ user-scalable=no">
           var make_payment = `<label style="display:inline-block;">Amount:</label>
 									<input id="payment_amount" type="number" value="`+ payment.amount + `" max="` + payment.amount + `"step="1" style="display:inline-block; width:64px">`
           window.payment_message += (window.payment_message ? "<br>" : "") + "Payment from User" + payment.from + " to User" + payment.to + "<br>" + make_payment +
-            "<button onclick=\"$('#options_div').hide(); user_pay_event(\'" + payment.from + "\', \'" + payment.to + "\', parseFloat($('#payment_amount').val()))\">Make Payment</button>"
+            "<button onclick=\"document.getElementById('options_div').style.display='hidden'; user_pay_event(\'" + payment.from + "\', \'" + payment.to + "\', parseFloat(document.getElementById('payment_amount').value))\">Make Payment</button>"
 
           window.payment_clicked = function () {
             pause();
-            show_option(window.payment_message);
+            window.show_option(window.payment_message);
           }
         }
 
@@ -3082,7 +3081,7 @@ user-scalable=no">
     function user_leave_event(user_name, when = window.get_time()) {
       window.event_list.push({ type: EVENT_TYPES.LEAVE, name: user_name, when })
       window.event_list = window.event_list.sort((a, b) => a.when - b.when)
-      $('#options_div').hide()
+      document.getElementById('options_div').style.display='hidden'
     }
 
     function user_pay_event(from, to, amount, when = window.get_time()) {
@@ -3092,7 +3091,7 @@ user-scalable=no">
     function user_change_income_event(user_name, income_or_expenses, when = window.get_time()) {
       window.event_list.push({ type: EVENT_TYPES.CHANGE_INCOME, name: user_name, income: income_or_expenses, when })
       window.event_list = window.event_list.sort((a, b) => a.when - b.when)
-      $('#options_div').hide()
+      document.getElementById('options_div').style.display='hidden'
 
     }
     function group_change_income_event(new_mincome, when = window.get_time()) {
@@ -3529,8 +3528,8 @@ user-scalable=no">
 					  	<label style="display:inline-block;">Amount:</label>
 						<input id="have_amount" type="number" value="`+ haver.have + `" step="1" style="display:inline-block; width:64px">`
 
-                show_option("User" + haver.name + ":<br>" + change_pledge +
-                  "<button onclick=\"user_change_income_event(\'" + haver.name + "\', parseFloat($(\'#have_amount\').val()))\">Set Income</button>" +
+                window.show_option("User" + haver.name + ":<br>" + change_pledge +
+                  "<button onclick=\"user_change_income_event(\'" + haver.name + "\', parseFloat(document.getElementById(\'have_amount\').value))\">Set Income</button>" +
                   "<br><button onclick=\"user_leave_event(\'" + name + "\')\">Make Leave</button>");
               }
             }(haver)
@@ -3645,8 +3644,8 @@ user-scalable=no">
 					  	<label style="display:inline-block;">Amount:</label>
 						<input id="need_amount" type="number" value="`+ needer.need + `" step="1" style="display:inline-block; width:64px">`
 
-                show_option("User" + needer.name + ":<br>" + change_pledge +
-                  "<button onclick=\"user_change_income_event(\'" + needer.name + "\', parseFloat($(\'#need_amount\').val()))\">Set Income</button>" +
+                window.show_option("User" + needer.name + ":<br>" + change_pledge +
+                  "<button onclick=\"user_change_income_event(\'" + needer.name + "\', parseFloat(document.getElementById(\'need_amount\').value))\">Set Income</button>" +
                   "<br><button onclick=\"user_leave_event(\'" + name + "\')\">Make Leave</button>");
               }
             }(needer)
@@ -3717,11 +3716,11 @@ user-scalable=no">
           var make_payment = `<label style="display:inline-block;">Amount:</label>
 									<input id="payment_amount" type="number" value="`+ payment.amount + `" max="` + payment.amount + `"step="1" style="display:inline-block; width:64px">`
           window.payment_message += (window.payment_message ? "<br>" : "") + "Payment from User" + payment.from + " to User" + payment.to + "<br>" + make_payment +
-            "<button onclick=\"$('#options_div').hide(); user_pay_event(\'" + payment.from + "\', \'" + payment.to + "\', parseFloat($('#payment_amount').val()))\">Make Payment</button>"
+            "<button onclick=\"document.getElementById('options_div').style.display='hidden'; user_pay_event(\'" + payment.from + "\', \'" + payment.to + "\', parseFloat(document.getElementById('payment_amount').value))\">Make Payment</button>"
 
           window.payment_clicked = function () {
             pause();
-            show_option(window.payment_message);
+            window.show_option(window.payment_message);
           }
         }
 
@@ -3750,13 +3749,6 @@ user-scalable=no">
       }
       window.addEventListener('resize', res);
 
-      function show_option(html) {
-        options_div.style.display = "block"
-        options_div.innerHTML = html;
-        options_div.style.top = (window.mouse_page_position[1] - canvas_div.offsetTop) + "px";
-        options_div.style.left = (window.mouse_page_position[0] - options_div.offsetWidth / 2.) + "px";
-      }
-
       function onmousemove(e) {
         window.mouse_page_position = [e.pageX, e.pageY]
         window.mouse_canvas_position = [e.pageX / canvas_div.offsetWidth, 1. - (e.pageY - canvas_div.offsetTop) / canvas_div.offsetHeight]
@@ -3784,24 +3776,23 @@ user-scalable=no">
         window.mouse_busy = false;
       }
 
+      window.show_option = (html)=>{
+      	options_div.style.display="block"
+        options_div.innerHTML = html;
+        options_div.style.top= (window.mouse_page_position[1]-canvas_div.offsetTop)+ "px";
+        options_div.style.left= (window.mouse_page_position[0] - options_div.offsetWidth/ 2.) + "px";
+    }
       window.show_mouse = () => {
         if (window.mouse_html) {
           mouse_div.style.display = "block"
           mouse_div.innerHTML = window.mouse_html;
-          mouse_div.style.top = (window.mouse_page_position[1] - canvas_div.offsetTop - mouse_div.offsetHeight) + "px";
+          mouse_div.style.top = (window.mouse_page_position[1] - canvas_div.offsetTop) + "px";
           mouse_div.style.left = (window.mouse_page_position[0] - mouse_div.offsetWidth / 2.) + "px";
           mouse_div.onmousemove = onmousemove
 
         }
         else
           mouse_div.style.display = "none"
-      }
-
-      function show_option(html) {
-        options_div.style.display = "block"
-        options_div.innerHTML = html;
-        options_div.style.top = (window.mouse_page_position[1] - canvas_div.offsetTop) + "px";
-        options_div.style.left = (window.mouse_page_position[0] - options_div.offsetWidth / 2.) + "px";
       }
 
       window.mouse_page_position = []
