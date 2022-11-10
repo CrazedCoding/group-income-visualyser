@@ -2595,7 +2595,7 @@ user-scalable=no">
 
                 window.show_option("User" + haver.name + ":<br>" + change_pledge +
                   "<button onclick=\"user_change_income_event(\'" + haver.name + "\', parseFloat(document.getElementById(\'have_amount\').value))\">Set Income</button>" +
-                  "<br><button onclick=\"user_leave_event(\'" + name + "\')\">Make Leave</button>");
+                  "<br><button onclick=\"user_leave_event(\'" + haver.name + "\')\">Make Leave</button>");
               }
             }(haver)
           }
@@ -2713,7 +2713,7 @@ user-scalable=no">
 
                 window.show_option("User" + needer.name + ":<br>" + change_pledge +
                   "<button onclick=\"user_change_income_event(\'" + needer.name + "\', parseFloat(document.getElementById(\'need_amount\').value))\">Set Income</button>" +
-                  "<br><button onclick=\"user_leave_event(\'" + name + "\')\">Make Leave</button>");
+                  "<br><button onclick=\"user_leave_event(\'" + needer.name + "\')\">Make Leave</button>");
               }
             }(needer)
           }
