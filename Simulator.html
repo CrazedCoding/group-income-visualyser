@@ -413,27 +413,27 @@ user-scalable=no">
     function mincomeProportional(haveNeeds) {
       let totalHave = 0;
       let totalNeed = 0;
-      const havers = [];
-      const needers = [];
+      const pledgers = [];
+      const receivers = [];
       for (const haveNeed of haveNeeds) {
         if (haveNeed.haveNeed > 0) {
-          havers.push(haveNeed);
+          pledgers.push(haveNeed);
           totalHave += haveNeed.haveNeed;
         } else if (haveNeed.haveNeed < 0) {
-          needers.push(haveNeed);
+          receivers.push(haveNeed);
           totalNeed += Math.abs(haveNeed.haveNeed);
         }
       }
       const totalPercent = Math.min(1, totalNeed / totalHave);
       const payments = [];
-      for (const haver of havers) {
-        const distributionAmount = totalPercent * haver.haveNeed;
-        for (const needer of needers) {
-          const belowPercentage = Math.abs(needer.haveNeed) / totalNeed;
+      for (const pledger of pledgers) {
+        const distributionAmount = totalPercent * pledger.haveNeed;
+        for (const receiver of receivers) {
+          const belowPercentage = Math.abs(receiver.haveNeed) / totalNeed;
           payments.push({
             amount: distributionAmount * belowPercentage,
-            from: haver.name,
-            to: needer.name
+            from: pledger.name,
+            to: receiver.name
           });
         }
       }
@@ -442,37 +442,37 @@ user-scalable=no">
 
     // frontend/model/contracts/shared/distribution/payments-minimizer.js
     function minimizeTotalPaymentsCount(distribution) {
-      const neederTotalReceived = {};
-      const haverTotalHave = {};
-      const haversSorted = [];
-      const needersSorted = [];
+      const receiverTotalReceived = {};
+      const pledgerTotalHave = {};
+      const pledgersSorted = [];
+      const receiversSorted = [];
       const minimizedDistribution = [];
       for (const todo of distribution) {
-        neederTotalReceived[todo.to] = (neederTotalReceived[todo.to] || 0) + todo.amount;
-        haverTotalHave[todo.from] = (haverTotalHave[todo.from] || 0) + todo.amount;
+        receiverTotalReceived[todo.to] = (receiverTotalReceived[todo.to] || 0) + todo.amount;
+        pledgerTotalHave[todo.from] = (pledgerTotalHave[todo.from] || 0) + todo.amount;
       }
-      for (const name in haverTotalHave) {
-        haversSorted.push({ name, amount: haverTotalHave[name] });
+      for (const name in pledgerTotalHave) {
+        pledgersSorted.push({ name, amount: pledgerTotalHave[name] });
       }
-      for (const name in neederTotalReceived) {
-        needersSorted.push({ name, amount: neederTotalReceived[name] });
+      for (const name in receiverTotalReceived) {
+        receiversSorted.push({ name, amount: receiverTotalReceived[name] });
       }
-      haversSorted.sort((a, b) => b.amount - a.amount);
-      needersSorted.sort((a, b) => b.amount - a.amount);
-      while (haversSorted.length > 0 && needersSorted.length > 0) {
-        const mostHaver = haversSorted.pop();
-        const mostNeeder = needersSorted.pop();
-        const diff = mostHaver.amount - mostNeeder.amount;
+      pledgersSorted.sort((a, b) => b.amount - a.amount);
+      receiversSorted.sort((a, b) => b.amount - a.amount);
+      while (pledgersSorted.length > 0 && receiversSorted.length > 0) {
+        const mostPledger = pledgersSorted.pop();
+        const mostReceiver = receiversSorted.pop();
+        const diff = mostPledger.amount - mostReceiver.amount;
         if (diff < 0) {
-          minimizedDistribution.push({ amount: mostHaver.amount, from: mostHaver.name, to: mostNeeder.name });
-          mostNeeder.amount -= mostHaver.amount;
-          needersSorted.push(mostNeeder);
+          minimizedDistribution.push({ amount: mostPledger.amount, from: mostPledger.name, to: mostReceiver.name });
+          mostReceiver.amount -= mostPledger.amount;
+          receiversSorted.push(mostReceiver);
         } else if (diff > 0) {
-          minimizedDistribution.push({ amount: mostNeeder.amount, from: mostHaver.name, to: mostNeeder.name });
-          mostHaver.amount -= mostNeeder.amount;
-          haversSorted.push(mostHaver);
+          minimizedDistribution.push({ amount: mostReceiver.amount, from: mostPledger.name, to: mostReceiver.name });
+          mostPledger.amount -= mostReceiver.amount;
+          pledgersSorted.push(mostPledger);
         } else {
-          minimizedDistribution.push({ amount: mostNeeder.amount, from: mostHaver.name, to: mostNeeder.name });
+          minimizedDistribution.push({ amount: mostReceiver.amount, from: mostPledger.name, to: mostReceiver.name });
         }
       }
       return minimizedDistribution;
@@ -1979,11 +1979,11 @@ user-scalable=no">
     window.userAlgorithm = window.algorithm
 
     var minCome = 0.0
-    function distibuteFromHavesToNeeds({ haves, needs }) {
+    function distibuteFromHavesToNeeds({ pledgers, receivers }) {
 
       var incomes = []
-      incomes.push(haves.map((a) => { return { name: a.name, amount: a.have + minCome }; }))
-      incomes.push(needs.map((a) => { return { name: a.name, amount: minCome - a.need }; }))
+      incomes.push(pledgers.map((a) => { return { name: a.name, amount: a.pledge + minCome }; }))
+      incomes.push(receivers.map((a) => { return { name: a.name, amount: minCome - a.receive }; }))
       incomes = incomes.flat();
 
       const membersBelow = []
@@ -2073,8 +2073,8 @@ user-scalable=no">
         toggle_pause();
     }
 
-    window.havers = []
-    window.needers = []
+    window.pledgers = []
+    window.receivers = []
 
     window.user_counter = 1;
     window.event_list = []
@@ -2088,19 +2088,19 @@ user-scalable=no">
       MONTHLY_BALANCE: "MONTHLY_BALANCE"
     }
 
-    function haver_by_name(name) {
-      var haver = null
-      for (var i = 0; i < window.havers.length; i++)
-        if (window.havers[i].name == name)
-          haver = window.havers[i]
-      return haver;
+    function pledger_by_name(name) {
+      var pledger = null
+      for (var i = 0; i < window.pledgers.length; i++)
+        if (window.pledgers[i].name == name)
+          pledger = window.pledgers[i]
+      return pledger;
     }
-    function needer_by_name(name) {
-      var needer = null
-      for (var i = 0; i < window.needers.length; i++)
-        if (window.needers[i].name == name)
-          needer = window.needers[i]
-      return needer;
+    function receiver_by_name(name) {
+      var receiver = null
+      for (var i = 0; i < window.receivers.length; i++)
+        if (window.receivers[i].name == name)
+          receiver = window.receivers[i]
+      return receiver;
     }
 
     function find_event_index(when = window.get_time()) {
@@ -2141,7 +2141,7 @@ user-scalable=no">
         return;
       }
       parse_events(false, for_month - 1)
-      window.event_list.push({ type: EVENT_TYPES.MONTHLY_BALANCE, when: for_month * time_window, overpayments: [], underpayments: [], havers: window.havers, needers: window.needers })
+      window.event_list.push({ type: EVENT_TYPES.MONTHLY_BALANCE, when: for_month * time_window, overpayments: [], underpayments: [], pledgers: window.pledgers, receivers: window.receivers })
       window.event_list = window.event_list.sort((a, b) => a.when - b.when)
     }
 
@@ -2154,8 +2154,8 @@ user-scalable=no">
       user_join_event(-5 - 5. * Math.pow(Math.random(), 2.), Math.random() * 30.)
     } while (Math.random() > .25)
 
-    // window.havers = window.havers.sort((a, b) => { return b.have - a.have })
-    // window.needers = window.needers.sort((a, b) => { return b.need - a.need })
+    // window.pledgers = window.pledgers.sort((a, b) => { return b.pledge - a.pledge })
+    // window.receivers = window.receivers.sort((a, b) => { return b.receive - a.receive })
 
     function get_amount() {
       var amount = Number(document.getElementById("amount").value)
@@ -2163,14 +2163,14 @@ user-scalable=no">
       return amount
     }
 
-    function get_distribution(havers, needers) {
-      return distibuteFromHavesToNeeds({ haves: havers, needs: needers, payments: [] });
+    function get_distribution(pledgers, receivers) {
+      return distibuteFromHavesToNeeds({ pledgers: pledgers, receivers: receivers, payments: [] });
     }
 
-    function add_haver() {
+    function add_pledger() {
       user_join_event(get_amount())
     }
-    function add_needer() {
+    function add_receiver() {
       user_join_event(-get_amount())
     }
 
@@ -2183,8 +2183,8 @@ user-scalable=no">
       window.final_wealth_trapezoids = []
       window.final_graphs_trapezoids = []
 
-      window.havers = []
-      window.needers = []
+      window.pledgers = []
+      window.receivers = []
       window.event_list = []
       window.user_counter = 1;
       window.uniform_start_time = ((new Date()).getTime()) / 1E3;
@@ -2202,9 +2202,9 @@ user-scalable=no">
     label_html = []
     label_positions = []
 
-    window.haver_clicked = null;
+    window.pledger_clicked = null;
     window.payment_clicked = null;
-    window.needer_clicked = null;
+    window.receiver_clicked = null;
     window.mouse_busy = false;
 
 
@@ -2244,10 +2244,10 @@ user-scalable=no">
       max_wealth,
       spacer_scalar,
       max_transferable,
-      current_have,
+      current_pledge,
       label_html,
       label_positions,
-      current_need;
+      current_receive;
 
     function max_height(list) {
       return list.reduce((a, v) => {
@@ -2268,34 +2268,34 @@ user-scalable=no">
       elapsed_time = window.get_time();
       month_ratio = elapsed_time / window.time_window
       elapsed_time = Math.floor(1. + elapsed_time)
-      total_members = window.havers.length + window.needers.length
-      total_connections = window.havers.length * window.needers.length
+      total_members = window.pledgers.length + window.receivers.length
+      total_connections = window.pledgers.length * window.receivers.length
       parse_events();
-      totalHave = all_haver_heights().reduce((a, b) => a + max_minus_min(b), 0)
-      totalNeed = all_needer_heights().reduce((a, b) => a + max_minus_min(b), 0)
+      totalHave = all_pledger_heights().reduce((a, b) => a + max_minus_min(b), 0)
+      totalNeed = all_receiver_heights().reduce((a, b) => a + max_minus_min(b), 0)
       max_wealth = Math.max(totalHave, totalNeed)
       spacer_scalar = 2;
       max_transferable = max_wealth
 
       window.y_scalar = max_transferable;
 
-      var minHave = Math.abs(all_haver_heights().reduce((a, b) => { return Math.min(a, min_height(b)) }, 0))
-      var minNeed = Math.abs(all_needer_heights().reduce((a, b) => { return Math.min(a, min_height(b)) }, 0))
-      current_have = 0
+      var minHave = Math.abs(all_pledger_heights().reduce((a, b) => { return Math.min(a, min_height(b)) }, 0))
+      var minNeed = Math.abs(all_receiver_heights().reduce((a, b) => { return Math.min(a, min_height(b)) }, 0))
+      current_pledge = 0
 
-      window.havers = window.havers.map((a) => { a.monthly_aggregation = 0; a.monthly_aggregation_start = 0; a.monthly_aggregation_end = 0; return a; })
+      window.pledgers = window.pledgers.map((a) => { a.monthly_aggregation = 0; a.monthly_aggregation_start = 0; a.monthly_aggregation_end = 0; return a; })
 
       label_html = [];
       label_positions = [];
       
-      current_need = 0
+      current_receive = 0
 
-      window.needers = window.needers.map((a) => { a.monthly_aggregation = 0; a.monthly_aggregation_start = 0; a.monthly_aggregation_end = 0; return a; })
+      window.receivers = window.receivers.map((a) => { a.monthly_aggregation = 0; a.monthly_aggregation_start = 0; a.monthly_aggregation_end = 0; return a; })
     }
-    function all_haver_heights(for_month = Math.floor(get_time() / time_window)) {
+    function all_pledger_heights(for_month = Math.floor(get_time() / time_window)) {
       var heights = []
-      for (var i = 0; i < window.havers.length; i++) {
-        var weights = window.havers[i].money_heights
+      for (var i = 0; i < window.pledgers.length; i++) {
+        var weights = window.pledgers[i].money_heights
         if (weights.length > 0)
           heights.push(weights)
         else
@@ -2303,10 +2303,10 @@ user-scalable=no">
       }
       return heights
     }
-    function all_needer_heights(for_month = Math.floor(get_time() / time_window)) {
+    function all_receiver_heights(for_month = Math.floor(get_time() / time_window)) {
       var heights = []
-      for (var i = 0; i < window.needers.length; i++) {
-        var weights = window.needers[i].money_heights
+      for (var i = 0; i < window.receivers.length; i++) {
+        var weights = window.receivers[i].money_heights
         if (weights.length > 0)
           heights.push(weights)
         else
@@ -2315,19 +2315,19 @@ user-scalable=no">
       return heights
     }
 
-    function get_haver_or_needer(name) {
-      for (var i = 0; i < window.havers.length; i++)
-        if (window.havers[i].name == name)
-          return window.havers[i]
-      for (var i = 0; i < window.needers.length; i++)
-        if (window.needers[i].name == name)
-          return window.needers[i]
+    function get_pledger_or_receiver(name) {
+      for (var i = 0; i < window.pledgers.length; i++)
+        if (window.pledgers[i].name == name)
+          return window.pledgers[i]
+      for (var i = 0; i < window.receivers.length; i++)
+        if (window.receivers[i].name == name)
+          return window.receivers[i]
       return undefined;
     }
 
     function parse_events(full_region = false, for_month = Math.floor(get_time() / time_window)) {
-      window.havers = []
-      window.needers = []
+      window.pledgers = []
+      window.receivers = []
       var thread_safe_events = JSON.parse(JSON.stringify(window.event_list))
       event_parse_loop: for (var j = 0; j < thread_safe_events.length; j++) {
         var event = thread_safe_events[j];
@@ -2337,41 +2337,41 @@ user-scalable=no">
         if (event.type == EVENT_TYPES.JOIN) {
           var income_or_expenses = event.income
           if (income_or_expenses > 0) {
-            window.havers.push({ name: event.name, have: event.income, joined: event.when, monthly_aggregation: 0, monthly_aggregation_start: 0, monthly_aggregation_end: 0, trapezoids: [] });
+            window.pledgers.push({ name: event.name, pledge: event.income, joined: event.when, monthly_aggregation: 0, monthly_aggregation_start: 0, monthly_aggregation_end: 0, trapezoids: [] });
           }
           else {
-            window.needers.push({ name: event.name, need: Math.abs(event.income), joined: event.when, monthly_aggregation: 0, monthly_aggregation_start: 0, monthly_aggregation_end: 0, trapezoids: [] });
+            window.receivers.push({ name: event.name, receive: Math.abs(event.income), joined: event.when, monthly_aggregation: 0, monthly_aggregation_start: 0, monthly_aggregation_end: 0, trapezoids: [] });
           }
-          get_haver_or_needer(event.name).time_variable = event.when
-          get_haver_or_needer(event.name).income_integral = 0
-          get_haver_or_needer(event.name).last_income = Math.abs(event.income)
-          get_haver_or_needer(event.name).money_heights = []
-          get_haver_or_needer(event.name).money_heights.push([get_haver_or_needer(event.name).time_variable, get_haver_or_needer(event.name).income_integral])
+          get_pledger_or_receiver(event.name).time_variable = event.when
+          get_pledger_or_receiver(event.name).income_integral = 0
+          get_pledger_or_receiver(event.name).last_income = Math.abs(event.income)
+          get_pledger_or_receiver(event.name).money_heights = []
+          get_pledger_or_receiver(event.name).money_heights.push([get_pledger_or_receiver(event.name).time_variable, get_pledger_or_receiver(event.name).income_integral])
         }
         else if (event.type == EVENT_TYPES.LEAVE) {
-          window.havers = window.havers.filter((v) => { return v.name != event.name })
-          window.needers = window.needers.filter((v) => { return v.name != event.name })
+          window.pledgers = window.pledgers.filter((v) => { return v.name != event.name })
+          window.receivers = window.receivers.filter((v) => { return v.name != event.name })
         }
         else if (event.type == EVENT_TYPES.PAYMENT) {
-          var time_difference_from = (event.when - get_haver_or_needer(event.from).time_variable) / time_window
-          var time_difference_to = (event.when - get_haver_or_needer(event.to).time_variable) / time_window
+          var time_difference_from = (event.when - get_pledger_or_receiver(event.from).time_variable) / time_window
+          var time_difference_to = (event.when - get_pledger_or_receiver(event.to).time_variable) / time_window
 
-          var old_from_height = get_haver_or_needer(event.from).income_integral + time_difference_from * get_haver_or_needer(event.from).last_income;
-          var old_to_height = get_haver_or_needer(event.to).income_integral + time_difference_to * get_haver_or_needer(event.to).last_income;
+          var old_from_height = get_pledger_or_receiver(event.from).income_integral + time_difference_from * get_pledger_or_receiver(event.from).last_income;
+          var old_to_height = get_pledger_or_receiver(event.to).income_integral + time_difference_to * get_pledger_or_receiver(event.to).last_income;
           var new_from_height = old_from_height - event.amount;
           var new_to_height = old_to_height - event.amount;
 
-          get_haver_or_needer(event.from).money_heights.push([event.when, old_from_height])
+          get_pledger_or_receiver(event.from).money_heights.push([event.when, old_from_height])
 
-          get_haver_or_needer(event.to).money_heights.push([event.when, old_to_height])
+          get_pledger_or_receiver(event.to).money_heights.push([event.when, old_to_height])
 
-          get_haver_or_needer(event.from).income_integral = new_from_height
-          get_haver_or_needer(event.from).money_heights.push([event.when, new_from_height])
-          get_haver_or_needer(event.from).time_variable = event.when
+          get_pledger_or_receiver(event.from).income_integral = new_from_height
+          get_pledger_or_receiver(event.from).money_heights.push([event.when, new_from_height])
+          get_pledger_or_receiver(event.from).time_variable = event.when
 
-          get_haver_or_needer(event.to).income_integral = new_to_height
-          get_haver_or_needer(event.to).money_heights.push([event.when, new_to_height])
-          get_haver_or_needer(event.to).time_variable = event.when
+          get_pledger_or_receiver(event.to).income_integral = new_to_height
+          get_pledger_or_receiver(event.to).money_heights.push([event.when, new_to_height])
+          get_pledger_or_receiver(event.to).time_variable = event.when
 
           var event_time = event.when / time_window - Math.floor(get_time() / time_window)
 
@@ -2383,30 +2383,30 @@ user-scalable=no">
           window.current_monthly_payments.push({ from: event.from, to: event.to, amount: event.amount })
         }
         else if (event.type == EVENT_TYPES.CHANGE_INCOME) {
-          var time_difference = (event.when - get_haver_or_needer(event.name).time_variable) / time_window
-          get_haver_or_needer(event.name).time_variable = event.when
-          get_haver_or_needer(event.name).income_integral += time_difference * get_haver_or_needer(event.name).last_income
-          get_haver_or_needer(event.name).last_income = event.income
-          get_haver_or_needer(event.name).money_heights.push([get_haver_or_needer(event.name).time_variable, get_haver_or_needer(event.name).income_integral])
+          var time_difference = (event.when - get_pledger_or_receiver(event.name).time_variable) / time_window
+          get_pledger_or_receiver(event.name).time_variable = event.when
+          get_pledger_or_receiver(event.name).income_integral += time_difference * get_pledger_or_receiver(event.name).last_income
+          get_pledger_or_receiver(event.name).last_income = event.income
+          get_pledger_or_receiver(event.name).money_heights.push([get_pledger_or_receiver(event.name).time_variable, get_pledger_or_receiver(event.name).income_integral])
         }
         else if (event.type == EVENT_TYPES.CHANGE_MINCOME) {
         }
         else if (event.type == EVENT_TYPES.MONTHLY_BALANCE) {
-          window.havers = JSON.parse(JSON.stringify(event.havers)).map((v) => { v.time_variable = event.when; v.income_integral = 0; v.monthly_aggregation = 0; v.monthly_aggregation_start = 0; v.monthly_aggregation_end = 0; v.last_income = v.have; v.money_heights = [[v.time_variable, v.income_integral]]; return v; })
-          window.needers = JSON.parse(JSON.stringify(event.needers)).map((v) => { v.time_variable = event.when; v.income_integral = 0; v.monthly_aggregation = 0; v.monthly_aggregation_start = 0; v.monthly_aggregation_end = 0; v.last_income = v.need; v.money_heights = [[v.time_variable, v.income_integral]]; return v; })
+          window.pledgers = JSON.parse(JSON.stringify(event.pledgers)).map((v) => { v.time_variable = event.when; v.income_integral = 0; v.monthly_aggregation = 0; v.monthly_aggregation_start = 0; v.monthly_aggregation_end = 0; v.last_income = v.pledge; v.money_heights = [[v.time_variable, v.income_integral]]; return v; })
+          window.receivers = JSON.parse(JSON.stringify(event.receivers)).map((v) => { v.time_variable = event.when; v.income_integral = 0; v.monthly_aggregation = 0; v.monthly_aggregation_start = 0; v.monthly_aggregation_end = 0; v.last_income = v.receive; v.money_heights = [[v.time_variable, v.income_integral]]; return v; })
           window.overpayments = event.overpayments
           window.underpayments = event.underpayments
           window.current_payment_trapezoids = []
           window.current_monthly_payments = []
         }
       }
-      for (var i = 0; i < window.havers.length; i++) {
-        var money_heights = window.havers[i].money_heights
-        if (Math.floor((get_time()) / time_window - window.havers[i].time_variable / time_window) >= 0) {
-          var time_difference = (1. - (window.havers[i].time_variable / time_window) % 1.)
-          window.havers[i].time_variable += time_difference * time_window
-          window.havers[i].income_integral += time_difference * window.havers[i].last_income
-          money_heights.push([window.havers[i].time_variable, window.havers[i].income_integral])
+      for (var i = 0; i < window.pledgers.length; i++) {
+        var money_heights = window.pledgers[i].money_heights
+        if (Math.floor((get_time()) / time_window - window.pledgers[i].time_variable / time_window) >= 0) {
+          var time_difference = (1. - (window.pledgers[i].time_variable / time_window) % 1.)
+          window.pledgers[i].time_variable += time_difference * time_window
+          window.pledgers[i].income_integral += time_difference * window.pledgers[i].last_income
+          money_heights.push([window.pledgers[i].time_variable, window.pledgers[i].income_integral])
         }
 
         for (var j = 0; j < money_heights.length - 1; j++) {
@@ -2420,15 +2420,15 @@ user-scalable=no">
             j += 2
           }
         }
-        window.havers[i].money_heights = money_heights
+        window.pledgers[i].money_heights = money_heights
       }
-      for (var i = 0; i < window.needers.length; i++) {
-        var money_heights = window.needers[i].money_heights
-        if (Math.floor((get_time()) / time_window - window.needers[i].time_variable / time_window) >= 0) {
-          var time_difference = (1. - (window.needers[i].time_variable / time_window) % 1.)
-          window.needers[i].time_variable += time_difference * time_window
-          window.needers[i].income_integral += time_difference * window.needers[i].last_income
-          money_heights.push([window.needers[i].time_variable, window.needers[i].income_integral])
+      for (var i = 0; i < window.receivers.length; i++) {
+        var money_heights = window.receivers[i].money_heights
+        if (Math.floor((get_time()) / time_window - window.receivers[i].time_variable / time_window) >= 0) {
+          var time_difference = (1. - (window.receivers[i].time_variable / time_window) % 1.)
+          window.receivers[i].time_variable += time_difference * time_window
+          window.receivers[i].income_integral += time_difference * window.receivers[i].last_income
+          money_heights.push([window.receivers[i].time_variable, window.receivers[i].income_integral])
         }
         for (var j = 0; j < money_heights.length - 1; j++) {
           if (money_heights[j][1] < 0 && money_heights[j + 1][1] > 0) {
@@ -2441,7 +2441,7 @@ user-scalable=no">
             j += 2
           }
         }
-        window.needers[i].money_heights = money_heights
+        window.receivers[i].money_heights = money_heights
       }
     }
 
@@ -2493,24 +2493,24 @@ user-scalable=no">
       return false
     }
 
-    function havers_geometry(full_region = false) {
+    function pledgers_geometry(full_region = false) {
       var vertices = []
 
       var mouse_under = false;
-      for (var i = 0; i < window.havers.length; i++) {
-        var haver = window.havers[i]
-        haver.trapezoids = []
-        var name = haver.name;
+      for (var i = 0; i < window.pledgers.length; i++) {
+        var pledger = window.pledgers[i]
+        pledger.trapezoids = []
+        var name = pledger.name;
 
-        var money_heights = get_haver_or_needer(name).money_heights
+        var money_heights = get_pledger_or_receiver(name).money_heights
 
         if (money_heights.length < 2) continue
 
         var max_wealth = 0
         var min_wealth = min_height(money_heights)
-        current_have -= min_wealth / max_transferable;
-        haver.monthly_aggregation_start = (current_have);
-        haver.monthly_aggregation = (current_have);
+        current_pledge -= min_wealth / max_transferable;
+        pledger.monthly_aggregation_start = (current_pledge);
+        pledger.monthly_aggregation = (current_pledge);
         for (var j = 0; j < Math.floor(money_heights.length) - 1; j++) {
           var from_time = money_heights[j][0] / time_window - Math.floor(get_time() / time_window)
           var to_time = money_heights[j + 1][0] / time_window - Math.floor(get_time() / time_window)
@@ -2521,10 +2521,10 @@ user-scalable=no">
           max_wealth = Math.max(Math.max(from_wealth, to_wealth), max_wealth)
 
           let trapezoid = [
-            [from_time / 3., current_have, full_region ? to_wealth : from_wealth, full_region ? current_have : 0],
-            [to_time / 3., current_have, full_region ? to_wealth : from_wealth, full_region ? current_have : 0],
-            [to_time / 3., current_have + to_wealth, to_wealth, full_region ? current_have : 1],
-            [from_time / 3., current_have + from_wealth, from_wealth, full_region ? current_have : 1]]
+            [from_time / 3., current_pledge, full_region ? to_wealth : from_wealth, full_region ? current_pledge : 0],
+            [to_time / 3., current_pledge, full_region ? to_wealth : from_wealth, full_region ? current_pledge : 0],
+            [to_time / 3., current_pledge + to_wealth, to_wealth, full_region ? current_pledge : 1],
+            [from_time / 3., current_pledge + from_wealth, from_wealth, full_region ? current_pledge : 1]]
           if (full_region) {
 
             var old_trapezoid = JSON.parse(JSON.stringify(trapezoid))
@@ -2576,7 +2576,7 @@ user-scalable=no">
           var mesh = mesh_trapezoid(trapezoid);
           if (!mesh_is_visible(trapezoid.flat()))
             mesh = mesh.map((v) => Math.sign(v) * 3.)
-          haver.trapezoids.push(mesh)
+          pledger.trapezoids.push(mesh)
           vertices.push(mesh);
           label_html.push("user" + (name) + " has " + round_money(money_heights[money_heights.length - 1][1]) + "<br>");
           var avg_x = (trapezoid[0][0]+trapezoid[1][0])/2;
@@ -2585,49 +2585,49 @@ user-scalable=no">
           if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
             point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
             mouse_under = true;
-            window.haver_clicked = function (haver) {
+            window.pledger_clicked = function (pledger) {
               return function () {
                 pause();
 
                 var change_pledge = `
 					  	<label style="display:inline-block;">Amount:</label>
-						<input id="have_amount" type="number" value="`+ haver.have + `" step="1" style="display:inline-block; width:64px">`
+						<input id="pledge_amount" type="number" value="`+ pledger.pledge + `" step="1" style="display:inline-block; width:64px">`
 
-                window.show_option("User" + haver.name + ":<br>" + change_pledge +
-                  "<button onclick=\"user_change_income_event(\'" + haver.name + "\', parseFloat(document.getElementById(\'have_amount\').value))\">Set Income</button>" +
-                  "<br><button onclick=\"user_leave_event(\'" + haver.name + "\')\">Make Leave</button>");
+                window.show_option("User" + pledger.name + ":<br>" + change_pledge +
+                  "<button onclick=\"user_change_income_event(\'" + pledger.name + "\', parseFloat(document.getElementById(\'pledge_amount\').value))\">Set Income</button>" +
+                  "<br><button onclick=\"user_leave_event(\'" + pledger.name + "\')\">Make Leave</button>");
               }
-            }(haver)
+            }(pledger)
           }
         }
-        current_have += max_wealth
-        haver.monthly_aggregation_end = (current_have);
+        current_pledge += max_wealth
+        pledger.monthly_aggregation_end = (current_pledge);
       }
       if (!mouse_under)
-        window.haver_clicked = null;
+        window.pledger_clicked = null;
 
       return vertices.flat();
     }
-    function needers_geometry(full_region = false) {
+    function receivers_geometry(full_region = false) {
       var vertices = []
 
       var mouse_under = false;
-      for (var i = 0; i < window.needers.length; i++) {
-        var needer = window.needers[i]
-        needer.trapezoids = []
+      for (var i = 0; i < window.receivers.length; i++) {
+        var receiver = window.receivers[i]
+        receiver.trapezoids = []
 
-        var needer = needer
-        var name = needer.name;
+        var receiver = receiver
+        var name = receiver.name;
 
-        var money_heights = get_haver_or_needer(name).money_heights
+        var money_heights = get_pledger_or_receiver(name).money_heights
 
         if (money_heights.length < 2) continue
 
         var max_wealth = 0
         var min_wealth = min_height(money_heights)
-        current_need -= min_wealth / max_transferable;
-        needer.monthly_aggregation_start = (current_need);
-        needer.monthly_aggregation = (current_need);
+        current_receive -= min_wealth / max_transferable;
+        receiver.monthly_aggregation_start = (current_receive);
+        receiver.monthly_aggregation = (current_receive);
         for (var j = 0; j < Math.floor(money_heights.length) - 1; j++) {
           var from_time = money_heights[j][0] / time_window - Math.floor(get_time() / time_window)
           var to_time = money_heights[j + 1][0] / time_window - Math.floor(get_time() / time_window)
@@ -2637,10 +2637,10 @@ user-scalable=no">
 
           max_wealth = Math.max(Math.max(from_wealth, to_wealth), max_wealth)
 
-          let trapezoid = [[1. - from_time / 3., current_need, full_region ? to_wealth : from_wealth, full_region ? current_have : 0],
-          [1. - to_time / 3., current_need, full_region ? to_wealth : from_wealth, full_region ? current_have : 0],
-          [1. - to_time / 3., current_need + to_wealth, to_wealth, full_region ? current_have : 1],
-          [1. - from_time / 3., current_need + from_wealth, from_wealth, full_region ? current_have : 1]]
+          let trapezoid = [[1. - from_time / 3., current_receive, full_region ? to_wealth : from_wealth, full_region ? current_pledge : 0],
+          [1. - to_time / 3., current_receive, full_region ? to_wealth : from_wealth, full_region ? current_pledge : 0],
+          [1. - to_time / 3., current_receive + to_wealth, to_wealth, full_region ? current_pledge : 1],
+          [1. - from_time / 3., current_receive + from_wealth, from_wealth, full_region ? current_pledge : 1]]
 
           if (full_region) {
 
@@ -2694,35 +2694,35 @@ user-scalable=no">
           var mesh = mesh_trapezoid(trapezoid);
           if (!mesh_is_visible(trapezoid.flat()))
             mesh = mesh.map((v) => Math.sign(v) * 3.)
-          needer.trapezoids.push(mesh)
+          receiver.trapezoids.push(mesh)
           vertices.push(mesh);
-          label_html.push("user" + (name) + " needs " + round_money(money_heights[money_heights.length - 1][1]) + "<br>");
+          label_html.push("user" + (name) + " receivers " + round_money(money_heights[money_heights.length - 1][1]) + "<br>");
           var avg_x = (trapezoid[0][0]+trapezoid[1][0])/2.;
           var avg_y = (trapezoid[0][1]+trapezoid[1][1]+trapezoid[2][1]+trapezoid[3][1])/4;
           label_positions.push([avg_x, avg_y])
           if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
             point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
             mouse_under = true;
-            window.needer_clicked = function (needer) {
+            window.receiver_clicked = function (receiver) {
               return function () {
                 pause();
 
                 var change_pledge = `
 					  	<label style="display:inline-block;">Amount:</label>
-						<input id="need_amount" type="number" value="`+ needer.need + `" step="1" style="display:inline-block; width:64px">`
+						<input id="receive_amount" type="number" value="`+ receiver.receive + `" step="1" style="display:inline-block; width:64px">`
 
-                window.show_option("User" + needer.name + ":<br>" + change_pledge +
-                  "<button onclick=\"user_change_income_event(\'" + needer.name + "\', parseFloat(document.getElementById(\'need_amount\').value))\">Set Income</button>" +
-                  "<br><button onclick=\"user_leave_event(\'" + needer.name + "\')\">Make Leave</button>");
+                window.show_option("User" + receiver.name + ":<br>" + change_pledge +
+                  "<button onclick=\"user_change_income_event(\'" + receiver.name + "\', parseFloat(document.getElementById(\'receive_amount\').value))\">Set Income</button>" +
+                  "<br><button onclick=\"user_leave_event(\'" + receiver.name + "\')\">Make Leave</button>");
               }
-            }(needer)
+            }(receiver)
           }
         }
-        current_need += max_wealth
-        needer.monthly_aggregation_end = (current_need);
+        current_receive += max_wealth
+        receiver.monthly_aggregation_end = (current_receive);
       }
       if (!mouse_under)
-        window.needer_clicked = null;
+        window.receiver_clicked = null;
 
       return vertices.flat();
     }
@@ -2744,13 +2744,13 @@ user-scalable=no">
       window.payment_message = ""
       window.todo_payment_trapezoids = [];
       var vertices = []
-      var haver_heights = all_haver_heights()
-      var needer_heights = all_needer_heights()
-      if (haver_heights.length < 1 || needer_heights.length < 1)
+      var pledger_heights = all_pledger_heights()
+      var receiver_heights = all_receiver_heights()
+      if (pledger_heights.length < 1 || receiver_heights.length < 1)
         return [];
       var distribution = get_distribution(
-        haver_heights.map((a, i) => { return { name: window.havers[i].name, have: a[a.length - 1][1] + total_current_payments(window.havers[i].name) } }),
-        needer_heights.map((a, i) => { return { name: window.needers[i].name, need: a[a.length - 1][1] + total_current_payments(window.needers[i].name) } }));
+        pledger_heights.map((a, i) => { return { name: window.pledgers[i].name, pledge: a[a.length - 1][1] + total_current_payments(window.pledgers[i].name) } }),
+        receiver_heights.map((a, i) => { return { name: window.receivers[i].name, receive: a[a.length - 1][1] + total_current_payments(window.receivers[i].name) } }));
       distribution = distribution.map((v) => {
         v.amount -= total_current_payments_from_to(v.from, v.to)
         return v;
@@ -2760,17 +2760,17 @@ user-scalable=no">
       for (var i = 0; i < distribution.length; i++) {
         var payment = distribution[i]
 
-        var haver = haver_by_name(payment.from)
-        var needer = needer_by_name(payment.to)
+        var pledger = pledger_by_name(payment.from)
+        var receiver = receiver_by_name(payment.to)
 
-        if (!haver || !needer) {
+        if (!pledger || !receiver) {
           continue
         }
 
-        let trapezoid = [[1. / 3., haver.monthly_aggregation, payment.amount / max_transferable, 0],
-        [2. / 3., needer.monthly_aggregation, payment.amount / max_transferable, 0],
-        [2. / 3., needer.monthly_aggregation + payment.amount / max_transferable, payment.amount / max_transferable, 1],
-        [1. / 3., haver.monthly_aggregation + payment.amount / max_transferable, payment.amount / max_transferable, 1]]
+        let trapezoid = [[1. / 3., pledger.monthly_aggregation, payment.amount / max_transferable, 0],
+        [2. / 3., receiver.monthly_aggregation, payment.amount / max_transferable, 0],
+        [2. / 3., receiver.monthly_aggregation + payment.amount / max_transferable, payment.amount / max_transferable, 1],
+        [1. / 3., pledger.monthly_aggregation + payment.amount / max_transferable, payment.amount / max_transferable, 1]]
 
         window.todo_payment_trapezoids.push(mesh_trapezoid(trapezoid))
         vertices.push(mesh_trapezoid(trapezoid));
@@ -2796,8 +2796,8 @@ user-scalable=no">
           }
         }
 
-        haver.monthly_aggregation += payment.amount / max_transferable;
-        needer.monthly_aggregation += payment.amount / max_transferable;
+        pledger.monthly_aggregation += payment.amount / max_transferable;
+        receiver.monthly_aggregation += payment.amount / max_transferable;
       }
       if (!mouse_under)
         window.payment_clicked = null;
@@ -2816,19 +2816,19 @@ user-scalable=no">
       monthly_balance_event()
       refresh_default_metrics();
       parse_events(true);
-      var vertices = [havers_geometry(true), needers_geometry(true)].flat().flat()
+      var vertices = [pledgers_geometry(true), receivers_geometry(true)].flat().flat()
 
       var time = new Date().getTime() / 1E3;
       if (!window.last_trapezoid_morph)
         window.last_trapezoid_morph = time;
       window.trapezoid_morph_step = time - window.last_trapezoid_morph;
       window.last_trapezoid_morph = time;
-      var maxHave = all_haver_heights().reduce((a, b) => {
+      var maxHave = all_pledger_heights().reduce((a, b) => {
         return Math.max(a, b.reduce((a, b) => {
           return Math.max(a, Math.abs(b[1]));
         }, 0))
       }, 0)
-      var maxNeed = all_needer_heights().reduce((a, b) => {
+      var maxNeed = all_receiver_heights().reduce((a, b) => {
         return Math.max(a, b.reduce((a, b) => {
           return Math.max(a, Math.abs(b[1]));
         }, 0))
@@ -2838,10 +2838,10 @@ user-scalable=no">
         window.last_max_amount = 1;
       window.last_max_amount += (max_amount - window.last_max_amount) * window.trapezoid_morph_step * 10.
       var index = 0;
-      for (var i = 0; i < window.havers.length; i++) {
+      for (var i = 0; i < window.pledgers.length; i++) {
         if (!window.last_graphs_trapezoids[0][i])
           window.last_graphs_trapezoids[0][i] = []
-        var trapezoids = window.havers[i].trapezoids;
+        var trapezoids = window.pledgers[i].trapezoids;
         var sub_index = 0;
         for (var j = 0; j < trapezoids.length; j++) {
           if (!window.last_graphs_trapezoids[0][i][j])
@@ -2864,10 +2864,10 @@ user-scalable=no">
       }
       window.last_graphs_trapezoids[0] = window.last_graphs_trapezoids[0].slice(0, index)
       var index = 0;
-      for (var i = 0; i < window.needers.length; i++) {
+      for (var i = 0; i < window.receivers.length; i++) {
         if (!window.last_graphs_trapezoids[1][i])
           window.last_graphs_trapezoids[1][i] = []
-        var trapezoids = window.needers[i].trapezoids;
+        var trapezoids = window.receivers[i].trapezoids;
         var sub_index = 0
         for (var j = 0; j < trapezoids.length; j++) {
           if (!window.last_graphs_trapezoids[1][i][j])
@@ -2897,15 +2897,15 @@ user-scalable=no">
               window.final_graphs_trapezoids.push(window.last_graphs_trapezoids[i][j][k])
       parse_events();
       refresh_default_metrics();
-      var vertices = [havers_geometry(), needers_geometry(), payments_geometry()].flat()
+      var vertices = [pledgers_geometry(), receivers_geometry(), payments_geometry()].flat()
 
 
       var index = 0;
-      for (var i = 0; i < window.havers.length; i++) {
+      for (var i = 0; i < window.pledgers.length; i++) {
 
         if (!window.last_wealth_trapezoids[0][i])
           window.last_wealth_trapezoids[0][i] = []
-        var trapezoids = window.havers[i].trapezoids;
+        var trapezoids = window.pledgers[i].trapezoids;
         var sub_index = 0;
         for (var j = 0; j < trapezoids.length; j++) {
           if (!window.last_wealth_trapezoids[0][i][j])
@@ -2927,10 +2927,10 @@ user-scalable=no">
         index++
       } window.last_wealth_trapezoids[0] = window.last_wealth_trapezoids[0].slice(0, index)
       var index = 0;
-      for (var i = 0; i < window.needers.length; i++) {
+      for (var i = 0; i < window.receivers.length; i++) {
         if (!window.last_wealth_trapezoids[1][i])
           window.last_wealth_trapezoids[1][i] = []
-        var trapezoids = window.needers[i].trapezoids;
+        var trapezoids = window.receivers[i].trapezoids;
         var sub_index = 0;
         for (var j = 0; j < trapezoids.length; j++) {
           if (!window.last_wealth_trapezoids[1][i][j])
@@ -2957,14 +2957,14 @@ user-scalable=no">
           window.last_payment_trapezoids[0][i] = []
         var trapezoid_info = window.current_payment_trapezoids[i]
 
-        var haver = get_haver_or_needer(trapezoid_info.from);
-        var needer = get_haver_or_needer(trapezoid_info.to);
+        var pledger = get_pledger_or_receiver(trapezoid_info.from);
+        var receiver = get_pledger_or_receiver(trapezoid_info.to);
 
-        if (!haver || !needer)
+        if (!pledger || !receiver)
           continue;
 
-        var from_aggregation = haver.monthly_aggregation_start
-        var to_aggregation = needer.monthly_aggregation_start
+        var from_aggregation = pledger.monthly_aggregation_start
+        var to_aggregation = receiver.monthly_aggregation_start
 
         var basic_trapezoid = trapezoid_info.trapezoid
 
@@ -3086,9 +3086,9 @@ user-scalable=no">
       canvas_div.onmouseup = function (e) {
         if (window.mouse_busy) return;
 
-        if (window.haver_clicked) window.haver_clicked()
+        if (window.pledger_clicked) window.pledger_clicked()
         else if (window.payment_clicked) window.payment_clicked()
-        else if (window.needer_clicked) window.needer_clicked()
+        else if (window.receiver_clicked) window.receiver_clicked()
         else {
           unpause();
           return;
@@ -3139,18 +3139,18 @@ user-scalable=no">
 
 <body>
   <div id="top_div">
-    <div class="add_haver"
+    <div class="add_pledger"
       style="position:absolute; left:0%; top:10px; width: 33%; height:95%; important; text-align:center;">
-      <button onclick="add_haver()">Add Pledger</button>
+      <button onclick="add_pledger()">Add Pledger</button>
     </div>
     <div class="" style="position:absolute; left:33%; top:10px; width: 33%; height:95%; important; text-align:center;">
       <label style="display:inline-block;">Amount:</label>
       <input id="amount" type="number" value="10" min="0" step="1" style="display:inline-block; width:50%">
       </input>
     </div>
-    <div id="add_needer"
+    <div id="add_receiver"
       style="position:absolute; left:66%; top:10px; width: 33%; height:95%; important; text-align:center;">
-      <button onclick="add_needer()">Add Receiver</button>
+      <button onclick="add_receiver()">Add Receiver</button>
     </div>
   </div>
   <div id="canvas_div">
