@@ -56,11 +56,11 @@ user-scalable=no">
       border: 1px solid #77f;
     }
 
-    #mouse_div,
+    .label_div,
     #options_div {
       color: #000;
       position: absolute;
-      background-color: #fff;
+      background-color: rgba(255,255,255,.75);
       border: 1px solid#77f;
       text-align: center;
       z-index: 10;
@@ -2198,7 +2198,8 @@ user-scalable=no">
     window.last_graphs_trapezoids = [[], []]
     window.last_wealth_trapezoids = [[], []]
     window.last_payment_trapezoids = [[], [], [], []]
-    window.mouse_html = ""
+    label_html = []
+    label_positions = []
 
     window.haver_clicked = null;
     window.payment_clicked = null;
@@ -2243,7 +2244,8 @@ user-scalable=no">
       spacer_scalar,
       max_transferable,
       current_have,
-      mouse_html,
+      label_html,
+      label_positions,
       current_need;
 
     function max_height(list) {
@@ -2282,8 +2284,9 @@ user-scalable=no">
 
       window.havers = window.havers.map((a) => { a.monthly_aggregation = 0; a.monthly_aggregation_start = 0; a.monthly_aggregation_end = 0; return a; })
 
-      mouse_html = "";
-
+      label_html = [];
+      label_positions = [];
+      
       current_need = 0
 
       window.needers = window.needers.map((a) => { a.monthly_aggregation = 0; a.monthly_aggregation_start = 0; a.monthly_aggregation_end = 0; return a; })
@@ -2574,10 +2577,12 @@ user-scalable=no">
             mesh = mesh.map((v) => Math.sign(v) * 3.)
           haver.trapezoids.push(mesh)
           vertices.push(mesh);
-
+          label_html.push("user" + (name) + " has " + round_money(money_heights[money_heights.length - 1][1]) + "<br>");
+          var avg_x = (trapezoid[0][0]+trapezoid[1][0])/2;
+          var avg_y = (trapezoid[0][1]+trapezoid[1][1]+trapezoid[2][1]+trapezoid[3][1])/4;
+          label_positions.push([avg_x, avg_y])
           if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
             point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
-            mouse_html += "user" + (name) + " has " + round_money(money_heights[money_heights.length - 1][1]) + "<br>";
             mouse_under = true;
             window.haver_clicked = function (haver) {
               return function () {
@@ -2690,10 +2695,12 @@ user-scalable=no">
             mesh = mesh.map((v) => Math.sign(v) * 3.)
           needer.trapezoids.push(mesh)
           vertices.push(mesh);
-
+          label_html.push("user" + (name) + " needs " + round_money(money_heights[money_heights.length - 1][1]) + "<br>");
+          var avg_x = (trapezoid[0][0]+trapezoid[1][0])/2.;
+          var avg_y = (trapezoid[0][1]+trapezoid[1][1]+trapezoid[2][1]+trapezoid[3][1])/4;
+          label_positions.push([avg_x, avg_y])
           if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
             point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
-            mouse_html += "user" + (name) + " needs " + round_money(money_heights[money_heights.length - 1][1]) + "<br>";
             mouse_under = true;
             window.needer_clicked = function (needer) {
               return function () {
@@ -2768,10 +2775,15 @@ user-scalable=no">
 
         window.todo_payment_trapezoids.push(mesh_trapezoid(trapezoid))
         vertices.push(mesh_trapezoid(trapezoid));
-
+        label_html.push(""+round_money(payment.amount));
+          var avg_x = (trapezoid[0][0]);
+          var avg_y = (trapezoid[0][1]+trapezoid[3][1])/2;
+          label_positions.push([avg_x, avg_y])
         if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
           point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
-          mouse_html += "TODO Payment<br>From: user" + (payment.from) + "<br>To: user" + (payment.to) + "<br>Amount: " + round_money(payment.amount) + "<br> <div style='border-bottom: 1px solid #000'></div>";
+            
+          label_html.push("TODO Payment<br>From: user" + (payment.from) + "<br>To: user" + (payment.to) + "<br>Amount: " + round_money(payment.amount) + "<br> <div style='border-bottom: 1px solid #000'></div>");
+          label_positions.push(window.mouse_canvas_position)
           mouse_under = true;
 
           var make_payment = `<label style="display:inline-block;">Amount:</label>
@@ -3027,7 +3039,7 @@ user-scalable=no">
         index++
       } window.last_payment_trapezoids[3] = window.last_payment_trapezoids[3].slice(0, index)
 
-      if (window.show_mouse) window.show_mouse()
+      if (window.show_labels) window.show_labels()
 
       window.final_wealth_trapezoids = []
       for (var i = 0; i < window.last_wealth_trapezoids.length; i++)
@@ -3050,688 +3062,6 @@ user-scalable=no">
             if (mesh_is_visible(window.last_payment_trapezoids[i][j][k]))
               window.final_payment_trapezoids.push(window.last_payment_trapezoids[i][j][k])
     }
-    function haver_by_name(name) {
-      var haver = null
-      for (var i = 0; i < window.havers.length; i++)
-        if (window.havers[i].name == name)
-          haver = window.havers[i]
-      return haver;
-    }
-    function needer_by_name(name) {
-      var needer = null
-      for (var i = 0; i < window.needers.length; i++)
-        if (window.needers[i].name == name)
-          needer = window.needers[i]
-      return needer;
-    }
-
-    function find_event_index(when = window.get_time()) {
-      for (var i = 0; i < window.event_list.length - 1; i++) {
-        if (when >= window.event_list[i].when && when < window.event_list[i + 1].when)
-          return i;
-      }
-      return window.event_list.length;
-    }
-
-    function user_join_event(income_or_expenses, when = window.get_time()) {
-      var user_index = window.user_counter++
-      window.event_list.push({ type: EVENT_TYPES.JOIN, name: user_index, when, income: income_or_expenses })
-      window.event_list = window.event_list.sort((a, b) => a.when - b.when)
-    }
-    function user_leave_event(user_name, when = window.get_time()) {
-      window.event_list.push({ type: EVENT_TYPES.LEAVE, name: user_name, when })
-      window.event_list = window.event_list.sort((a, b) => a.when - b.when)
-      document.getElementById('options_div').style.display='hidden'
-    }
-
-    function user_pay_event(from, to, amount, when = window.get_time()) {
-      window.event_list.push({ type: EVENT_TYPES.PAYMENT, from, to, amount, when })
-      window.event_list = window.event_list.sort((a, b) => a.when - b.when)
-    }
-    function user_change_income_event(user_name, income_or_expenses, when = window.get_time()) {
-      window.event_list.push({ type: EVENT_TYPES.CHANGE_INCOME, name: user_name, income: income_or_expenses, when })
-      window.event_list = window.event_list.sort((a, b) => a.when - b.when)
-      document.getElementById('options_div').style.display='hidden'
-
-    }
-    function group_change_income_event(new_mincome, when = window.get_time()) {
-
-    }
-    function monthly_balance_event(for_month = Math.floor(window.get_time() / time_window)) {
-      var event = window.event_list.filter((e) => e.type == EVENT_TYPES.MONTHLY_BALANCE && Math.floor(e.when / time_window) == for_month)[0]
-      if (event) {
-        return;
-      }
-      parse_events(false, for_month - 1)
-      window.event_list.push({ type: EVENT_TYPES.MONTHLY_BALANCE, when: for_month * time_window, overpayments: [], underpayments: [], havers: window.havers, needers: window.needers })
-      window.event_list = window.event_list.sort((a, b) => a.when - b.when)
-    }
-
-    monthly_balance_event()
-
-    do {
-      user_join_event(5 + 5. * Math.pow(Math.random(), 2.), Math.random() * 30.)
-    } while (Math.random() > .25)
-    do {
-      user_join_event(-5 - 5. * Math.pow(Math.random(), 2.), Math.random() * 30.)
-    } while (Math.random() > .25)
-
-    // window.havers = window.havers.sort((a, b) => { return b.have - a.have })
-    // window.needers = window.needers.sort((a, b) => { return b.need - a.need })
-
-    function get_amount() {
-      var amount = Number(document.getElementById("amount").value)
-      //$("#amount").val(Math.random())
-      return amount
-    }
-
-    function get_distribution(havers, needers) {
-      return distibuteFromHavesToNeeds({ haves: havers, needs: needers, payments: [] });
-    }
-
-    function add_haver() {
-      user_join_event(get_amount())
-    }
-    function add_needer() {
-      user_join_event(-get_amount())
-    }
-
-
-    window.last_graphs_trapezoids = [[], []]
-    window.last_wealth_trapezoids = [[], []]
-    window.last_payment_trapezoids = [[], [], [], []]
-    window.mouse_html = ""
-
-    window.haver_clicked = null;
-    window.payment_clicked = null;
-    window.needer_clicked = null;
-    window.mouse_busy = false;
-
-    function vectors_are_colinear(vector_a, vector_b) {
-      return Math.abs(vector_a[0] * vector_b[1] -
-        vector_a[1] * vector_b[0]) < 1.E-3;
-
-    }
-
-    function point_in_triangle(point, triangle) {
-      //compute vectors & dot products
-      var cx = point[0], cy = point[1],
-        t0 = triangle[0], t1 = triangle[1], t2 = triangle[2],
-        v0x = t2[0] - t0[0], v0y = t2[1] - t0[1],
-        v1x = t1[0] - t0[0], v1y = t1[1] - t0[1],
-        v2x = cx - t0[0], v2y = cy - t0[1],
-        dot00 = v0x * v0x + v0y * v0y,
-        dot01 = v0x * v1x + v0y * v1y,
-        dot02 = v0x * v2x + v0y * v2y,
-        dot11 = v1x * v1x + v1y * v1y,
-        dot12 = v1x * v2x + v1y * v2y
-
-      // Compute barycentric coordinates
-      var b = (dot00 * dot11 - dot01 * dot01),
-        inv = b === 0 ? 0 : (1 / b),
-        u = (dot11 * dot02 - dot01 * dot12) * inv,
-        v = (dot00 * dot12 - dot01 * dot02) * inv
-      return !vectors_are_colinear([v0x, v0y], [v1x, v1y]) && u >= 0 && v >= 0 && (u + v < 1)
-    }
-
-    var elapsed_time,
-      month_ratio,
-      total_members,
-      total_connections,
-      totalHave,
-      totalNeed,
-      max_wealth,
-      spacer_scalar,
-      max_transferable,
-      current_have,
-      mouse_html,
-      current_need;
-
-    function max_height(list) {
-      return list.reduce((a, v) => {
-        return Math.max(a, v[1])
-      }, -1E32)
-    }
-    function min_height(list) {
-      return list.reduce((a, v) => {
-        return Math.min(a, v[1])
-      }, 1E32)
-    }
-
-    function max_minus_min(list) {
-      return max_height(list) - min_height(list);
-    }
-
-    function refresh_default_metrics() {
-      elapsed_time = window.get_time();
-      month_ratio = elapsed_time / window.time_window
-      elapsed_time = Math.floor(1. + elapsed_time)
-      total_members = window.havers.length + window.needers.length
-      total_connections = window.havers.length * window.needers.length
-      parse_events();
-      totalHave = all_haver_heights().reduce((a, b) => a + max_minus_min(b), 0)
-      totalNeed = all_needer_heights().reduce((a, b) => a + max_minus_min(b), 0)
-      max_wealth = Math.max(totalHave, totalNeed)
-      spacer_scalar = 2;
-      max_transferable = max_wealth
-
-      window.y_scalar = max_transferable;
-
-      var minHave = Math.abs(all_haver_heights().reduce((a, b) => { return Math.min(a, min_height(b)) }, 0))
-      var minNeed = Math.abs(all_needer_heights().reduce((a, b) => { return Math.min(a, min_height(b)) }, 0))
-      current_have = 0
-
-      window.havers = window.havers.map((a) => { a.monthly_aggregation = 0; a.monthly_aggregation_start = 0; a.monthly_aggregation_end = 0; return a; })
-
-      mouse_html = "";
-
-      current_need = 0
-
-      window.needers = window.needers.map((a) => { a.monthly_aggregation = 0; a.monthly_aggregation_start = 0; a.monthly_aggregation_end = 0; return a; })
-    }
-    function all_haver_heights(for_month = Math.floor(get_time() / time_window)) {
-      var heights = []
-      for (var i = 0; i < window.havers.length; i++) {
-        var weights = window.havers[i].money_heights
-        if (weights.length > 0)
-          heights.push(weights)
-        else
-          heights.push([0., 0.])
-      }
-      return heights
-    }
-    function all_needer_heights(for_month = Math.floor(get_time() / time_window)) {
-      var heights = []
-      for (var i = 0; i < window.needers.length; i++) {
-        var weights = window.needers[i].money_heights
-        if (weights.length > 0)
-          heights.push(weights)
-        else
-          heights.push([0., 0.])
-      }
-      return heights
-    }
-
-    function get_haver_or_needer(name) {
-      for (var i = 0; i < window.havers.length; i++)
-        if (window.havers[i].name == name)
-          return window.havers[i]
-      for (var i = 0; i < window.needers.length; i++)
-        if (window.needers[i].name == name)
-          return window.needers[i]
-      return undefined;
-    }
-
-    function parse_events(full_region = false, for_month = Math.floor(get_time() / time_window)) {
-      window.havers = []
-      window.needers = []
-      var thread_safe_events = JSON.parse(JSON.stringify(window.event_list))
-      event_parse_loop: for (var j = 0; j < thread_safe_events.length; j++) {
-        var event = thread_safe_events[j];
-        if (event.when && (event.when > window.get_time() || Math.floor(event.when / time_window) != for_month))
-          continue;
-
-        if (event.type == EVENT_TYPES.JOIN) {
-          var income_or_expenses = event.income
-          if (income_or_expenses > 0) {
-            window.havers.push({ name: event.name, have: event.income, joined: event.when, monthly_aggregation: 0, monthly_aggregation_start: 0, monthly_aggregation_end: 0, trapezoids: [] });
-          }
-          else {
-            window.needers.push({ name: event.name, need: Math.abs(event.income), joined: event.when, monthly_aggregation: 0, monthly_aggregation_start: 0, monthly_aggregation_end: 0, trapezoids: [] });
-          }
-          get_haver_or_needer(event.name).time_variable = event.when
-          get_haver_or_needer(event.name).income_integral = 0
-          get_haver_or_needer(event.name).last_income = Math.abs(event.income)
-          get_haver_or_needer(event.name).money_heights = []
-          get_haver_or_needer(event.name).money_heights.push([get_haver_or_needer(event.name).time_variable, get_haver_or_needer(event.name).income_integral])
-        }
-        else if (event.type == EVENT_TYPES.LEAVE) {
-          window.havers = window.havers.filter((v) => { return v.name != event.name })
-          window.needers = window.needers.filter((v) => { return v.name != event.name })
-        }
-        else if (event.type == EVENT_TYPES.PAYMENT) {
-          var time_difference_from = (event.when - get_haver_or_needer(event.from).time_variable) / time_window
-          var time_difference_to = (event.when - get_haver_or_needer(event.to).time_variable) / time_window
-
-          var old_from_height = get_haver_or_needer(event.from).income_integral + time_difference_from * get_haver_or_needer(event.from).last_income;
-          var old_to_height = get_haver_or_needer(event.to).income_integral + time_difference_to * get_haver_or_needer(event.to).last_income;
-          var new_from_height = old_from_height - event.amount;
-          var new_to_height = old_to_height - event.amount;
-
-          get_haver_or_needer(event.from).money_heights.push([event.when, old_from_height])
-
-          get_haver_or_needer(event.to).money_heights.push([event.when, old_to_height])
-
-          get_haver_or_needer(event.from).income_integral = new_from_height
-          get_haver_or_needer(event.from).money_heights.push([event.when, new_from_height])
-          get_haver_or_needer(event.from).time_variable = event.when
-
-          get_haver_or_needer(event.to).income_integral = new_to_height
-          get_haver_or_needer(event.to).money_heights.push([event.when, new_to_height])
-          get_haver_or_needer(event.to).time_variable = event.when
-
-          var event_time = event.when / time_window - Math.floor(get_time() / time_window)
-
-          let trapezoid = [[event_time / 3., old_from_height, event.amount, 0],
-          [1. - event_time / 3., old_to_height, event.amount, 0],
-          [1. - event_time / 3., new_to_height, event.amount, 1],
-          [event_time / 3., new_from_height, event.amount, 1]]
-          window.current_payment_trapezoids.push({ from: event.from, to: event.to, trapezoid })
-          window.current_monthly_payments.push({ from: event.from, to: event.to, amount: event.amount })
-        }
-        else if (event.type == EVENT_TYPES.CHANGE_INCOME) {
-          var time_difference = (event.when - get_haver_or_needer(event.name).time_variable) / time_window
-          get_haver_or_needer(event.name).time_variable = event.when
-          get_haver_or_needer(event.name).income_integral += time_difference * get_haver_or_needer(event.name).last_income
-          get_haver_or_needer(event.name).last_income = event.income
-          get_haver_or_needer(event.name).money_heights.push([get_haver_or_needer(event.name).time_variable, get_haver_or_needer(event.name).income_integral])
-        }
-        else if (event.type == EVENT_TYPES.CHANGE_MINCOME) {
-        }
-        else if (event.type == EVENT_TYPES.MONTHLY_BALANCE) {
-          window.havers = JSON.parse(JSON.stringify(event.havers)).map((v) => { v.time_variable = event.when; v.income_integral = 0; v.monthly_aggregation = 0; v.monthly_aggregation_start = 0; v.monthly_aggregation_end = 0; v.last_income = v.have; v.money_heights = [[v.time_variable, v.income_integral]]; return v; })
-          window.needers = JSON.parse(JSON.stringify(event.needers)).map((v) => { v.time_variable = event.when; v.income_integral = 0; v.monthly_aggregation = 0; v.monthly_aggregation_start = 0; v.monthly_aggregation_end = 0; v.last_income = v.need; v.money_heights = [[v.time_variable, v.income_integral]]; return v; })
-          window.overpayments = event.overpayments
-          window.underpayments = event.underpayments
-          window.current_payment_trapezoids = []
-          window.current_monthly_payments = []
-        }
-      }
-      for (var i = 0; i < window.havers.length; i++) {
-        var money_heights = window.havers[i].money_heights
-        if (Math.floor((get_time()) / time_window - window.havers[i].time_variable / time_window) >= 0) {
-          var time_difference = (1. - (window.havers[i].time_variable / time_window) % 1.)
-          window.havers[i].time_variable += time_difference * time_window
-          window.havers[i].income_integral += time_difference * window.havers[i].last_income
-          money_heights.push([window.havers[i].time_variable, window.havers[i].income_integral])
-        }
-
-        for (var j = 0; j < money_heights.length - 1; j++) {
-          if (money_heights[j][1] < 0 && money_heights[j + 1][1] > 0) {
-            var delta_x = money_heights[j + 1][0] - money_heights[j][0]
-            var y_ratio = -money_heights[j][1] / (-money_heights[j][1] + money_heights[j + 1][1])
-
-            money_heights = [money_heights.slice(0, j + 1),
-            [[money_heights[j][0] + delta_x * y_ratio, 0]],
-            money_heights.slice(j + 1, money_heights.length)].flat()
-            j += 2
-          }
-        }
-        window.havers[i].money_heights = money_heights
-      }
-      for (var i = 0; i < window.needers.length; i++) {
-        var money_heights = window.needers[i].money_heights
-        if (Math.floor((get_time()) / time_window - window.needers[i].time_variable / time_window) >= 0) {
-          var time_difference = (1. - (window.needers[i].time_variable / time_window) % 1.)
-          window.needers[i].time_variable += time_difference * time_window
-          window.needers[i].income_integral += time_difference * window.needers[i].last_income
-          money_heights.push([window.needers[i].time_variable, window.needers[i].income_integral])
-        }
-        for (var j = 0; j < money_heights.length - 1; j++) {
-          if (money_heights[j][1] < 0 && money_heights[j + 1][1] > 0) {
-            var delta_x = money_heights[j + 1][0] - money_heights[j][0]
-            var y_ratio = -money_heights[j][1] / (-money_heights[j][1] + money_heights[j + 1][1])
-
-            money_heights = [money_heights.slice(0, j + 1),
-            [[money_heights[j][0] + delta_x * y_ratio, 0]],
-            money_heights.slice(j + 1, money_heights.length)].flat()
-            j += 2
-          }
-        }
-        window.needers[i].money_heights = money_heights
-      }
-    }
-
-    function round_money(amount, digits = 2) {
-      var power = Math.pow(10, digits)
-      return Math.floor(amount * power) / power;
-    }
-
-    function mesh_trapezoid(trapezoid) {
-      var vertices = []
-      vertices.push(trapezoid[0][0]);
-      vertices.push(trapezoid[0][1]);
-      vertices.push(trapezoid[0][2]);
-      vertices.push(trapezoid[0][3]);
-
-      vertices.push(trapezoid[1][0]);
-      vertices.push(trapezoid[1][1]);
-      vertices.push(trapezoid[1][2]);
-      vertices.push(trapezoid[1][3]);
-
-      vertices.push(trapezoid[2][0]);
-      vertices.push(trapezoid[2][1]);
-      vertices.push(trapezoid[2][2]);
-      vertices.push(trapezoid[2][3]);
-
-      vertices.push(trapezoid[0][0]);
-      vertices.push(trapezoid[0][1]);
-      vertices.push(trapezoid[0][2]);
-      vertices.push(trapezoid[0][3]);
-
-      vertices.push(trapezoid[3][0]);
-      vertices.push(trapezoid[3][1]);
-      vertices.push(trapezoid[3][2]);
-      vertices.push(trapezoid[3][3]);
-
-      vertices.push(trapezoid[2][0]);
-      vertices.push(trapezoid[2][1]);
-      vertices.push(trapezoid[2][2]);
-      vertices.push(trapezoid[2][3]);
-      return vertices;
-    }
-
-    function mesh_is_visible(vertices) {
-      for (var i = 0; i < vertices.length / 4; i++) {
-        if (vertices[i * 4 + 0] > -1. && vertices[i * 4 + 0] < 2. &&
-          vertices[i * 4 + 1] > -1. && vertices[i * 4 + 1] < 2.)
-          return true
-      }
-      return false
-    }
-
-    function havers_geometry(full_region = false) {
-      var vertices = []
-
-      var mouse_under = false;
-      for (var i = 0; i < window.havers.length; i++) {
-        var haver = window.havers[i]
-        haver.trapezoids = []
-        var name = haver.name;
-
-        var money_heights = get_haver_or_needer(name).money_heights
-
-        if (money_heights.length < 2) continue
-
-        var max_wealth = 0
-        var min_wealth = min_height(money_heights)
-        current_have -= min_wealth / max_transferable;
-        haver.monthly_aggregation_start = (current_have);
-        haver.monthly_aggregation = (current_have);
-        for (var j = 0; j < Math.floor(money_heights.length) - 1; j++) {
-          var from_time = money_heights[j][0] / time_window - Math.floor(get_time() / time_window)
-          var to_time = money_heights[j + 1][0] / time_window - Math.floor(get_time() / time_window)
-
-          var from_wealth = money_heights[j][1] / max_transferable
-          var to_wealth = money_heights[j + 1][1] / max_transferable
-
-          max_wealth = Math.max(Math.max(from_wealth, to_wealth), max_wealth)
-
-          let trapezoid = [
-            [from_time / 3., current_have, full_region ? to_wealth : from_wealth, full_region ? current_have : 0],
-            [to_time / 3., current_have, full_region ? to_wealth : from_wealth, full_region ? current_have : 0],
-            [to_time / 3., current_have + to_wealth, to_wealth, full_region ? current_have : 1],
-            [from_time / 3., current_have + from_wealth, from_wealth, full_region ? current_have : 1]]
-          if (full_region) {
-
-            var old_trapezoid = JSON.parse(JSON.stringify(trapezoid))
-
-            var min_x = Math.min(Math.min(Math.min(old_trapezoid[0][0],
-              old_trapezoid[1][0]),
-              old_trapezoid[2][0]),
-              old_trapezoid[3][0])
-            var min_y = Math.min(Math.min(Math.min(old_trapezoid[0][1],
-              old_trapezoid[1][1]),
-              old_trapezoid[2][1]),
-              old_trapezoid[3][1])
-            var max_x = Math.max(Math.max(Math.max(old_trapezoid[0][0],
-              old_trapezoid[1][0]),
-              old_trapezoid[2][0]),
-              old_trapezoid[3][0])
-            var max_y = Math.max(Math.max(Math.max(old_trapezoid[0][1],
-              old_trapezoid[1][1]),
-              old_trapezoid[2][1]),
-              old_trapezoid[3][1])
-
-            trapezoid[0][0] = min_x
-            trapezoid[0][1] = min_y
-
-            trapezoid[1][0] = max_x
-            trapezoid[1][1] = min_y
-
-            trapezoid[2][0] = max_x
-            trapezoid[2][1] = max_y
-
-            trapezoid[3][0] = min_x
-            trapezoid[3][1] = max_y
-
-            if (from_wealth < 0)
-              to_wealth = Math.abs(from_wealth)
-
-            trapezoid[0][2] = to_wealth * max_transferable
-            trapezoid[0][3] = 0
-
-            trapezoid[1][2] = to_wealth * max_transferable
-            trapezoid[1][3] = 0
-
-            trapezoid[2][2] = to_wealth * max_transferable
-            trapezoid[2][3] = 1
-
-            trapezoid[3][2] = to_wealth * max_transferable
-            trapezoid[3][3] = 1
-          }
-          var mesh = mesh_trapezoid(trapezoid);
-          if (!mesh_is_visible(trapezoid.flat()))
-            mesh = mesh.map((v) => Math.sign(v) * 3.)
-          haver.trapezoids.push(mesh)
-          vertices.push(mesh);
-
-          if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
-            point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
-            mouse_html += "user" + (name) + " has " + round_money(money_heights[money_heights.length - 1][1]) + "<br>";
-            mouse_under = true;
-            window.haver_clicked = function (haver) {
-              return function () {
-                pause();
-
-                var change_pledge = `
-					  	<label style="display:inline-block;">Amount:</label>
-						<input id="have_amount" type="number" value="`+ haver.have + `" step="1" style="display:inline-block; width:64px">`
-
-                window.show_option("User" + haver.name + ":<br>" + change_pledge +
-                  "<button onclick=\"user_change_income_event(\'" + haver.name + "\', parseFloat(document.getElementById(\'have_amount\').value))\">Set Income</button>" +
-                  "<br><button onclick=\"user_leave_event(\'" + name + "\')\">Make Leave</button>");
-              }
-            }(haver)
-          }
-        }
-        current_have += max_wealth
-        haver.monthly_aggregation_end = (current_have);
-      }
-      if (!mouse_under)
-        window.haver_clicked = null;
-
-      return vertices.flat();
-    }
-    function needers_geometry(full_region = false) {
-      var vertices = []
-
-      var mouse_under = false;
-      for (var i = 0; i < window.needers.length; i++) {
-        var needer = window.needers[i]
-        needer.trapezoids = []
-
-        var needer = needer
-        var name = needer.name;
-
-        var money_heights = get_haver_or_needer(name).money_heights
-
-        if (money_heights.length < 2) continue
-
-        var max_wealth = 0
-        var min_wealth = min_height(money_heights)
-        current_need -= min_wealth / max_transferable;
-        needer.monthly_aggregation_start = (current_need);
-        needer.monthly_aggregation = (current_need);
-        for (var j = 0; j < Math.floor(money_heights.length) - 1; j++) {
-          var from_time = money_heights[j][0] / time_window - Math.floor(get_time() / time_window)
-          var to_time = money_heights[j + 1][0] / time_window - Math.floor(get_time() / time_window)
-
-          var from_wealth = money_heights[j][1] / max_transferable
-          var to_wealth = money_heights[j + 1][1] / max_transferable
-
-          max_wealth = Math.max(Math.max(from_wealth, to_wealth), max_wealth)
-
-          let trapezoid = [[1. - from_time / 3., current_need, full_region ? to_wealth : from_wealth, full_region ? current_have : 0],
-          [1. - to_time / 3., current_need, full_region ? to_wealth : from_wealth, full_region ? current_have : 0],
-          [1. - to_time / 3., current_need + to_wealth, to_wealth, full_region ? current_have : 1],
-          [1. - from_time / 3., current_need + from_wealth, from_wealth, full_region ? current_have : 1]]
-
-          if (full_region) {
-
-            var old_trapezoid = JSON.parse(JSON.stringify(trapezoid))
-
-            var min_x = Math.min(Math.min(Math.min(old_trapezoid[0][0],
-              old_trapezoid[1][0]),
-              old_trapezoid[2][0]),
-              old_trapezoid[3][0])
-            var min_y = Math.min(Math.min(Math.min(old_trapezoid[0][1],
-              old_trapezoid[1][1]),
-              old_trapezoid[2][1]),
-              old_trapezoid[3][1])
-            var max_x = Math.max(Math.max(Math.max(old_trapezoid[0][0],
-              old_trapezoid[1][0]),
-              old_trapezoid[2][0]),
-              old_trapezoid[3][0])
-            var max_y = Math.max(Math.max(Math.max(old_trapezoid[0][1],
-              old_trapezoid[1][1]),
-              old_trapezoid[2][1]),
-              old_trapezoid[3][1])
-
-            trapezoid[0][0] = min_x
-            trapezoid[0][1] = min_y
-
-            trapezoid[1][0] = max_x
-            trapezoid[1][1] = min_y
-
-            trapezoid[2][0] = max_x
-            trapezoid[2][1] = max_y
-
-            trapezoid[3][0] = min_x
-            trapezoid[3][1] = max_y
-
-            if (from_wealth < 0)
-              to_wealth = Math.abs(from_wealth)
-
-            trapezoid[0][2] = to_wealth * max_transferable
-            trapezoid[0][3] = 0
-
-            trapezoid[1][2] = to_wealth * max_transferable
-            trapezoid[1][3] = 0
-
-            trapezoid[2][2] = to_wealth * max_transferable
-            trapezoid[2][3] = 1
-
-            trapezoid[3][2] = to_wealth * max_transferable
-            trapezoid[3][3] = 1
-          }
-
-          var mesh = mesh_trapezoid(trapezoid);
-          if (!mesh_is_visible(trapezoid.flat()))
-            mesh = mesh.map((v) => Math.sign(v) * 3.)
-          needer.trapezoids.push(mesh)
-          vertices.push(mesh);
-
-          if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
-            point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
-            mouse_html += "user" + (name) + " needs " + round_money(money_heights[money_heights.length - 1][1]) + "<br>";
-            mouse_under = true;
-            window.needer_clicked = function (needer) {
-              return function () {
-                pause();
-
-                var change_pledge = `
-					  	<label style="display:inline-block;">Amount:</label>
-						<input id="need_amount" type="number" value="`+ needer.need + `" step="1" style="display:inline-block; width:64px">`
-
-                window.show_option("User" + needer.name + ":<br>" + change_pledge +
-                  "<button onclick=\"user_change_income_event(\'" + needer.name + "\', parseFloat(document.getElementById(\'need_amount\').value))\">Set Income</button>" +
-                  "<br><button onclick=\"user_leave_event(\'" + name + "\')\">Make Leave</button>");
-              }
-            }(needer)
-          }
-        }
-        current_need += max_wealth
-        needer.monthly_aggregation_end = (current_need);
-      }
-      if (!mouse_under)
-        window.needer_clicked = null;
-
-      return vertices.flat();
-    }
-
-    function total_current_payments(name) {
-      if (!window.current_monthly_payments) return 0;
-      var total = 0
-      window.current_monthly_payments.map((v) => total += (v.from == name || v.to == name) ? v.amount : 0)
-      return total;
-    }
-    function total_current_payments_from_to(from, to) {
-      if (!window.current_monthly_payments) return 0;
-      var total = 0
-      window.current_monthly_payments.map((v) => total += (v.from == from && v.to == to) ? v.amount : 0)
-      return total;
-    }
-
-    function payments_geometry() {
-      window.payment_message = ""
-      window.todo_payment_trapezoids = [];
-      var vertices = []
-      var haver_heights = all_haver_heights()
-      var needer_heights = all_needer_heights()
-      if (haver_heights.length < 1 || needer_heights.length < 1)
-        return [];
-      var distribution = get_distribution(
-        haver_heights.map((a, i) => { return { name: window.havers[i].name, have: a[a.length - 1][1] + total_current_payments(window.havers[i].name) } }),
-        needer_heights.map((a, i) => { return { name: window.needers[i].name, need: a[a.length - 1][1] + total_current_payments(window.needers[i].name) } }));
-      distribution = distribution.map((v) => {
-        v.amount -= total_current_payments_from_to(v.from, v.to)
-        return v;
-      })
-
-      var mouse_under = false;
-      for (var i = 0; i < distribution.length; i++) {
-        var payment = distribution[i]
-
-        var haver = haver_by_name(payment.from)
-        var needer = needer_by_name(payment.to)
-
-        if (!haver || !needer) {
-          continue
-        }
-
-        let trapezoid = [[1. / 3., haver.monthly_aggregation, payment.amount / max_transferable, 0],
-        [2. / 3., needer.monthly_aggregation, payment.amount / max_transferable, 0],
-        [2. / 3., needer.monthly_aggregation + payment.amount / max_transferable, payment.amount / max_transferable, 1],
-        [1. / 3., haver.monthly_aggregation + payment.amount / max_transferable, payment.amount / max_transferable, 1]]
-
-        window.todo_payment_trapezoids.push(mesh_trapezoid(trapezoid))
-        vertices.push(mesh_trapezoid(trapezoid));
-
-        if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
-          point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
-          mouse_html += "TODO Payment<br>From: user" + (payment.from) + "<br>To: user" + (payment.to) + "<br>Amount: " + round_money(payment.amount) + "<br> <div style='border-bottom: 1px solid #000'></div>";
-          mouse_under = true;
-
-          var make_payment = `<label style="display:inline-block;">Amount:</label>
-									<input id="payment_amount" type="number" value="`+ payment.amount + `" max="` + payment.amount + `"step="1" style="display:inline-block; width:64px">`
-          window.payment_message += (window.payment_message ? "<br>" : "") + "Payment from User" + payment.from + " to User" + payment.to + "<br>" + make_payment +
-            "<button onclick=\"document.getElementById('options_div').style.display='hidden'; user_pay_event(\'" + payment.from + "\', \'" + payment.to + "\', parseFloat(document.getElementById('payment_amount').value))\">Make Payment</button>"
-
-          window.payment_clicked = function () {
-            pause();
-            window.show_option(window.payment_message);
-          }
-        }
-
-        haver.monthly_aggregation += payment.amount / max_transferable;
-        needer.monthly_aggregation += payment.amount / max_transferable;
-      }
-      if (!mouse_under)
-        window.payment_clicked = null;
-
-      return vertices.flat();
-    }
     window.onload = () => {
 
       window.reload_algorithm()
@@ -3742,7 +3072,7 @@ user-scalable=no">
       canvas.style.width = '100%';
       canvas.style.height = '100%';
       var canvas_div = document.getElementById("canvas_div");
-      var mouse_div = document.getElementById("mouse_div")
+      var label_div = document.getElementById("label_div")
       canvas_div.append(canvas);
       function res() {
         pipeline.contexts[pipeline.contexts.length - 1].resizeCanvas()
@@ -3767,7 +3097,7 @@ user-scalable=no">
         document.getElementById("pause_button").style.display = "inline-block"
       };
       var options_div = document.getElementById("options_div")
-      var mouse_div = document.getElementById("mouse_div")
+      var label_div = document.getElementById("label_div")
 
       options_div.onmouseenter = function (e) {
         window.mouse_busy = true;
@@ -3782,17 +3112,22 @@ user-scalable=no">
         options_div.style.top= (window.mouse_page_position[1]-canvas_div.offsetTop)+ "px";
         options_div.style.left= (window.mouse_page_position[0] - options_div.offsetWidth/ 2.) + "px";
     }
-      window.show_mouse = () => {
-        if (window.mouse_html) {
-          mouse_div.style.display = "block"
-          mouse_div.innerHTML = window.mouse_html;
-          mouse_div.style.top = (window.mouse_page_position[1] - canvas_div.offsetTop) + "px";
-          mouse_div.style.left = (window.mouse_page_position[0] - mouse_div.offsetWidth / 2.) + "px";
-          mouse_div.onmousemove = onmousemove
-
+      window.show_labels = () => {
+        if (label_html) {
+          var html = label_html.reduce((acc, html, index) => {
+            debugger
+            var x = Math.floor(label_positions[index][0]*canvas_div.offsetWidth)
+            var y = Math.floor((1.-label_positions[index][1])*canvas_div.offsetHeight)
+            return acc + '<div style="transform:translate(-50%,-50%); position:absolute; display:block; left: '+x+'px; top: '+y+'px;"class="label_div">'+html+'</div>'
+          }, "")
+          label_div.style.display = "block"
+          if(html != window.last_label_html)
+          label_div.innerHTML = html;
+          window.last_label_html = html;
+          label_div.onmousemove = onmousemove
         }
         else
-          mouse_div.style.display = "none"
+          label_div.style.display = "none"
       }
 
       window.mouse_page_position = []
@@ -3810,7 +3145,7 @@ user-scalable=no">
   <div id="top_div">
     <div class="add_haver"
       style="position:absolute; left:0%; top:10px; width: 33%; height:95%; important; text-align:center;">
-      <button onclick="add_haver()">Add Haver</button>
+      <button onclick="add_haver()">Add Pledger</button>
     </div>
     <div class="" style="position:absolute; left:33%; top:10px; width: 33%; height:95%; important; text-align:center;">
       <label style="display:inline-block;">Amount:</label>
@@ -3819,11 +3154,11 @@ user-scalable=no">
     </div>
     <div id="add_needer"
       style="position:absolute; left:66%; top:10px; width: 33%; height:95%; important; text-align:center;">
-      <button onclick="add_needer()">Add Needer</button>
+      <button onclick="add_needer()">Add Receiver</button>
     </div>
   </div>
   <div id="canvas_div">
-    <div id="mouse_div">
+    <div style="width:100%; height: 100%; position: absolute;" id="label_div">
     </div>
     <div id="options_div">
     </div>
