@@ -2183,9 +2183,6 @@ user-scalable=no">
       window.final_wealth_trapezoids = []
       window.final_graphs_trapezoids = []
 
-      window.mouse_page_position = []
-      window.mouse_canvas_position = []
-
       window.havers = []
       window.needers = []
       window.event_list = []
@@ -2195,6 +2192,10 @@ user-scalable=no">
     }
 
 
+
+    window.mouse_page_position = [0, 0]
+    window.mouse_canvas_position = [0, 0]
+    
     window.last_graphs_trapezoids = [[], []]
     window.last_wealth_trapezoids = [[], []]
     window.last_payment_trapezoids = [[], [], [], []]
@@ -2725,8 +2726,6 @@ user-scalable=no">
 
       return vertices.flat();
     }
-    window.mouse_page_position = []
-    window.mouse_canvas_position = []
 
     function total_current_payments(name) {
       if (!window.current_monthly_payments) return 0;
@@ -3115,7 +3114,6 @@ user-scalable=no">
       window.show_labels = () => {
         if (label_html) {
           var html = label_html.reduce((acc, html, index) => {
-            debugger
             var x = Math.floor(label_positions[index][0]*canvas_div.offsetWidth)
             var y = Math.floor((1.-label_positions[index][1])*canvas_div.offsetHeight)
             return acc + '<div style="transform:translate(-50%,-50%); position:absolute; display:block; left: '+x+'px; top: '+y+'px;"class="label_div">'+html+'</div>'
@@ -3130,8 +3128,6 @@ user-scalable=no">
           label_div.style.display = "none"
       }
 
-      window.mouse_page_position = []
-      window.mouse_canvas_position = []
       function onmousemove(e) {
         window.mouse_page_position = [e.pageX, e.pageY]
         window.mouse_canvas_position = [e.pageX / canvas_div.offsetWidth, 1. - (e.pageY - canvas_div.offsetTop) / canvas_div.offsetHeight]
