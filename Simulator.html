@@ -573,6 +573,9 @@ user-scalable=no">
     function addDistributions(paymentsA, paymentsB) {
       return reduceDistribution([...paymentsA, ...paymentsB]);
     }
+    function cloneDeep(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
     function subtractDistributions(paymentsA, paymentsB) {
       paymentsB = cloneDeep(paymentsB);
       for (const p of paymentsB) {
@@ -1979,55 +1982,7 @@ user-scalable=no">
     window.userAlgorithm = window.algorithm
 
     var minCome = 0.0
-    function distibuteFromHavesToNeeds({ pledgers, receivers }) {
-
-      var incomes = []
-      incomes.push(pledgers.map((a) => { return { name: a.name, amount: a.pledge + minCome }; }))
-      incomes.push(receivers.map((a) => { return { name: a.name, amount: minCome - a.receive }; }))
-      incomes = incomes.flat();
-
-      const membersBelow = []
-      let belowMincomeTotalAmount = 0
-      const membersAbove = []
-      let aboveMincomeTotalAmount = 0
-
-      for (const { name, amount } of incomes) {
-        const belowMincome = minCome - amount
-        if (belowMincome > 0) {
-          membersBelow.push(name)
-          belowMincomeTotalAmount += belowMincome
-        }
-        const aboveMincome = amount - minCome
-        if (aboveMincome > 0) {
-          membersAbove.push(name)
-          aboveMincomeTotalAmount += aboveMincome
-        }
-      }
-
-      const totalProportionalDistribution = Math.min(belowMincomeTotalAmount / aboveMincomeTotalAmount, 1)
-
-      const payments = []
-      for (const { name: fromName, amount: fromAmount } of incomes) {
-        if (membersAbove.find(aboveName => fromName === aboveName)) {
-          const aboveAmount = fromAmount - minCome
-          const distributionAmount = totalProportionalDistribution * aboveAmount
-          for (const { name: toName, amount: toAmount } of incomes) {
-            if (membersBelow.find(belowName => toName === belowName)) {
-              const belowAmount = minCome - toAmount
-              const belowPercentage = belowAmount / belowMincomeTotalAmount
-              const paymentAmount = distributionAmount * belowPercentage
-              const payment = {
-                amount: paymentAmount,
-                from: fromName,
-                to: toName
-              }
-              payments.push(payment)
-            }
-          }
-        }
-      }
-      return payments
-    }
+    
     window.time_window = 30.;
     window.uniform_start_time = ((new Date()).getTime()) / 1E3;
     window.when_group_created = window.uniform_start_time;
@@ -2140,12 +2095,10 @@ user-scalable=no">
       if (event) {
         return;
       }
-      parse_events(false, for_month - 1)
-      window.event_list.push({ type: EVENT_TYPES.MONTHLY_BALANCE, when: for_month * time_window, overpayments: [], underpayments: [], pledgers: window.pledgers, receivers: window.receivers })
+      window.event_list.push({ type: EVENT_TYPES.MONTHLY_BALANCE,
+        when: for_month * time_window, pledgers: window.pledgers, receivers: window.receivers })
       window.event_list = window.event_list.sort((a, b) => a.when - b.when)
     }
-
-    monthly_balance_event()
 
     do {
       user_join_event(5 + 5. * Math.pow(Math.random(), 2.), Math.random() * 30.)
@@ -2164,7 +2117,16 @@ user-scalable=no">
     }
 
     function get_distribution(pledgers, receivers) {
-      return distibuteFromHavesToNeeds({ pledgers: pledgers, receivers: receivers, payments: [] });
+      return adjustedDistribution({
+        distribution: unadjustedDistribution({haveNeeds: [
+          pledgers, 
+          receivers.map(r=>{
+            var s = cloneDeep(r);
+            s.haveNeed *= -1.;
+            return s;
+          })].flat(),
+          minimize:true
+        }), payments: window.current_monthly_payments, dueOn: 0});
     }
 
     function add_pledger() {
@@ -2271,11 +2233,11 @@ user-scalable=no">
       total_members = window.pledgers.length + window.receivers.length
       total_connections = window.pledgers.length * window.receivers.length
       parse_events();
-      totalHave = all_pledger_heights().reduce((a, b) => a + max_minus_min(b), 0)
-      totalNeed = all_receiver_heights().reduce((a, b) => a + max_minus_min(b), 0)
+      totalHave = all_pledger_heights().reduce((a, b) => a + max_height(b), 0)
+      totalNeed = all_receiver_heights().reduce((a, b) => a + max_height(b), 0)
       max_wealth = Math.max(totalHave, totalNeed)
-      spacer_scalar = 2;
-      max_transferable = max_wealth
+      spacer_scalar = 1.1;
+      max_transferable = max_wealth*spacer_scalar
 
       window.y_scalar = max_transferable;
 
@@ -2343,7 +2305,7 @@ user-scalable=no">
             window.receivers.push({ name: event.name, receive: Math.abs(event.income), joined: event.when, monthly_aggregation: 0, monthly_aggregation_start: 0, monthly_aggregation_end: 0, trapezoids: [] });
           }
           get_pledger_or_receiver(event.name).time_variable = event.when
-          get_pledger_or_receiver(event.name).income_integral = 0
+          get_pledger_or_receiver(event.name).income_integral = Math.abs(event.income)
           get_pledger_or_receiver(event.name).last_income = Math.abs(event.income)
           get_pledger_or_receiver(event.name).money_heights = []
           get_pledger_or_receiver(event.name).money_heights.push([get_pledger_or_receiver(event.name).time_variable, get_pledger_or_receiver(event.name).income_integral])
@@ -2356,8 +2318,8 @@ user-scalable=no">
           var time_difference_from = (event.when - get_pledger_or_receiver(event.from).time_variable) / time_window
           var time_difference_to = (event.when - get_pledger_or_receiver(event.to).time_variable) / time_window
 
-          var old_from_height = get_pledger_or_receiver(event.from).income_integral + time_difference_from * get_pledger_or_receiver(event.from).last_income;
-          var old_to_height = get_pledger_or_receiver(event.to).income_integral + time_difference_to * get_pledger_or_receiver(event.to).last_income;
+          var old_from_height = get_pledger_or_receiver(event.from).last_income;// + time_difference_from * get_pledger_or_receiver(event.from).last_income;
+          var old_to_height = get_pledger_or_receiver(event.to).last_income;// + time_difference_to * get_pledger_or_receiver(event.to).last_income;
           var new_from_height = old_from_height - event.amount;
           var new_to_height = old_to_height - event.amount;
 
@@ -2385,62 +2347,49 @@ user-scalable=no">
         else if (event.type == EVENT_TYPES.CHANGE_INCOME) {
           var time_difference = (event.when - get_pledger_or_receiver(event.name).time_variable) / time_window
           get_pledger_or_receiver(event.name).time_variable = event.when
-          get_pledger_or_receiver(event.name).income_integral += time_difference * get_pledger_or_receiver(event.name).last_income
-          get_pledger_or_receiver(event.name).last_income = event.income
+          get_pledger_or_receiver(event.name).money_heights.push([get_pledger_or_receiver(event.name).time_variable, get_pledger_or_receiver(event.name).income_integral])
+          get_pledger_or_receiver(event.name).income_integral = Math.abs(event.income)
+          get_pledger_or_receiver(event.name).last_income = Math.abs(event.income)
           get_pledger_or_receiver(event.name).money_heights.push([get_pledger_or_receiver(event.name).time_variable, get_pledger_or_receiver(event.name).income_integral])
         }
-        else if (event.type == EVENT_TYPES.CHANGE_MINCOME) {
-        }
         else if (event.type == EVENT_TYPES.MONTHLY_BALANCE) {
-          window.pledgers = JSON.parse(JSON.stringify(event.pledgers)).map((v) => { v.time_variable = event.when; v.income_integral = 0; v.monthly_aggregation = 0; v.monthly_aggregation_start = 0; v.monthly_aggregation_end = 0; v.last_income = v.pledge; v.money_heights = [[v.time_variable, v.income_integral]]; return v; })
-          window.receivers = JSON.parse(JSON.stringify(event.receivers)).map((v) => { v.time_variable = event.when; v.income_integral = 0; v.monthly_aggregation = 0; v.monthly_aggregation_start = 0; v.monthly_aggregation_end = 0; v.last_income = v.receive; v.money_heights = [[v.time_variable, v.income_integral]]; return v; })
-          window.overpayments = event.overpayments
-          window.underpayments = event.underpayments
+          window.pledgers = JSON.parse(JSON.stringify(event.pledgers)).map((v) => { 
+            v.time_variable = event.when;
+            v.monthly_aggregation = 0;
+            v.monthly_aggregation_start = 0;
+            v.monthly_aggregation_end = 0;
+            v.income_integral = v.pledge;
+            v.money_heights = [[v.time_variable, v.pledge]];
+            return v;
+          })
+          window.receivers = JSON.parse(JSON.stringify(event.receivers)).map((v) => {
+            v.time_variable = event.when;
+            v.monthly_aggregation = 0;
+            v.monthly_aggregation_start = 0;
+            v.monthly_aggregation_end = 0;
+            v.income_integral = v.receive;
+            v.money_heights = [[v.time_variable, v.receive]];
+            return v;
+          })
+          debugger;
           window.current_payment_trapezoids = []
           window.current_monthly_payments = []
         }
       }
       for (var i = 0; i < window.pledgers.length; i++) {
         var money_heights = window.pledgers[i].money_heights
-        if (Math.floor((get_time()) / time_window - window.pledgers[i].time_variable / time_window) >= 0) {
           var time_difference = (1. - (window.pledgers[i].time_variable / time_window) % 1.)
           window.pledgers[i].time_variable += time_difference * time_window
-          window.pledgers[i].income_integral += time_difference * window.pledgers[i].last_income
+          // window.pledgers[i].income_integral = window.pledgers[i].last_income
           money_heights.push([window.pledgers[i].time_variable, window.pledgers[i].income_integral])
-        }
-
-        for (var j = 0; j < money_heights.length - 1; j++) {
-          if (money_heights[j][1] < 0 && money_heights[j + 1][1] > 0) {
-            var delta_x = money_heights[j + 1][0] - money_heights[j][0]
-            var y_ratio = -money_heights[j][1] / (-money_heights[j][1] + money_heights[j + 1][1])
-
-            money_heights = [money_heights.slice(0, j + 1),
-            [[money_heights[j][0] + delta_x * y_ratio, 0]],
-            money_heights.slice(j + 1, money_heights.length)].flat()
-            j += 2
-          }
-        }
-        window.pledgers[i].money_heights = money_heights
+          window.pledgers[i].money_heights = money_heights
       }
       for (var i = 0; i < window.receivers.length; i++) {
         var money_heights = window.receivers[i].money_heights
-        if (Math.floor((get_time()) / time_window - window.receivers[i].time_variable / time_window) >= 0) {
           var time_difference = (1. - (window.receivers[i].time_variable / time_window) % 1.)
           window.receivers[i].time_variable += time_difference * time_window
-          window.receivers[i].income_integral += time_difference * window.receivers[i].last_income
+          // window.receivers[i].income_integral = window.receivers[i].last_income
           money_heights.push([window.receivers[i].time_variable, window.receivers[i].income_integral])
-        }
-        for (var j = 0; j < money_heights.length - 1; j++) {
-          if (money_heights[j][1] < 0 && money_heights[j + 1][1] > 0) {
-            var delta_x = money_heights[j + 1][0] - money_heights[j][0]
-            var y_ratio = -money_heights[j][1] / (-money_heights[j][1] + money_heights[j + 1][1])
-
-            money_heights = [money_heights.slice(0, j + 1),
-            [[money_heights[j][0] + delta_x * y_ratio, 0]],
-            money_heights.slice(j + 1, money_heights.length)].flat()
-            j += 2
-          }
-        }
         window.receivers[i].money_heights = money_heights
       }
     }
@@ -2508,10 +2457,10 @@ user-scalable=no">
 
         var max_wealth = 0
         var min_wealth = min_height(money_heights)
-        current_pledge -= min_wealth / max_transferable;
+        //current_pledge -= min_wealth / max_transferable;
         pledger.monthly_aggregation_start = (current_pledge);
         pledger.monthly_aggregation = (current_pledge);
-        for (var j = 0; j < Math.floor(money_heights.length) - 1; j++) {
+        for (var j = 0; j < Math.floor(money_heights.length) - 1; j+= 2) {
           var from_time = money_heights[j][0] / time_window - Math.floor(get_time() / time_window)
           var to_time = money_heights[j + 1][0] / time_window - Math.floor(get_time() / time_window)
 
@@ -2578,7 +2527,7 @@ user-scalable=no">
             mesh = mesh.map((v) => Math.sign(v) * 3.)
           pledger.trapezoids.push(mesh)
           vertices.push(mesh);
-          label_html.push("user" + (name) + " has " + round_money(money_heights[money_heights.length - 1][1]) + "<br>");
+          label_html.push("user" + (name) + " has " + round_money(money_heights[j][1]) + "<br>");
           var avg_x = (trapezoid[0][0]+trapezoid[1][0])/2;
           var avg_y = (trapezoid[0][1]+trapezoid[1][1]+trapezoid[2][1]+trapezoid[3][1])/4;
           label_positions.push([avg_x, avg_y])
@@ -2600,7 +2549,7 @@ user-scalable=no">
             }(pledger)
           }
         }
-        current_pledge += max_wealth
+        current_pledge += max_wealth*spacer_scalar
         pledger.monthly_aggregation_end = (current_pledge);
       }
       if (!mouse_under)
@@ -2625,10 +2574,10 @@ user-scalable=no">
 
         var max_wealth = 0
         var min_wealth = min_height(money_heights)
-        current_receive -= min_wealth / max_transferable;
+        // current_receive -= min_wealth / max_transferable;
         receiver.monthly_aggregation_start = (current_receive);
         receiver.monthly_aggregation = (current_receive);
-        for (var j = 0; j < Math.floor(money_heights.length) - 1; j++) {
+        for (var j = 0; j < Math.floor(money_heights.length) - 1; j += 2) {
           var from_time = money_heights[j][0] / time_window - Math.floor(get_time() / time_window)
           var to_time = money_heights[j + 1][0] / time_window - Math.floor(get_time() / time_window)
 
@@ -2696,7 +2645,7 @@ user-scalable=no">
             mesh = mesh.map((v) => Math.sign(v) * 3.)
           receiver.trapezoids.push(mesh)
           vertices.push(mesh);
-          label_html.push("user" + (name) + " receivers " + round_money(money_heights[money_heights.length - 1][1]) + "<br>");
+          label_html.push("user" + (name) + " receives " + round_money(money_heights[j][1]) + "<br>");
           var avg_x = (trapezoid[0][0]+trapezoid[1][0])/2.;
           var avg_y = (trapezoid[0][1]+trapezoid[1][1]+trapezoid[2][1]+trapezoid[3][1])/4;
           label_positions.push([avg_x, avg_y])
@@ -2718,7 +2667,7 @@ user-scalable=no">
             }(receiver)
           }
         }
-        current_receive += max_wealth
+        current_receive += max_wealth*spacer_scalar
         receiver.monthly_aggregation_end = (current_receive);
       }
       if (!mouse_under)
@@ -2749,13 +2698,8 @@ user-scalable=no">
       if (pledger_heights.length < 1 || receiver_heights.length < 1)
         return [];
       var distribution = get_distribution(
-        pledger_heights.map((a, i) => { return { name: window.pledgers[i].name, pledge: a[a.length - 1][1] + total_current_payments(window.pledgers[i].name) } }),
-        receiver_heights.map((a, i) => { return { name: window.receivers[i].name, receive: a[a.length - 1][1] + total_current_payments(window.receivers[i].name) } }));
-      distribution = distribution.map((v) => {
-        v.amount -= total_current_payments_from_to(v.from, v.to)
-        return v;
-      })
-
+        pledger_heights.map((a, i) => { return { name: window.pledgers[i].name, haveNeed: window.pledgers[i].pledge } }),
+        receiver_heights.map((a, i) => { return { name: window.receivers[i].name, haveNeed: window.receivers[i].receive} }));
       var mouse_under = false;
       for (var i = 0; i < distribution.length; i++) {
         var payment = distribution[i]
@@ -3140,16 +3084,16 @@ user-scalable=no">
 <body>
   <div id="top_div">
     <div class="add_pledger"
-      style="position:absolute; left:0%; top:10px; width: 33%; height:95%; important; text-align:center;">
+      style="position:absolute; left:0%; top:10px; width: 33%; height:95%; text-align:center;">
       <button onclick="add_pledger()">Add Pledger</button>
     </div>
-    <div class="" style="position:absolute; left:33%; top:10px; width: 33%; height:95%; important; text-align:center;">
+    <div class="" style="position:absolute; left:33%; top:10px; width: 33%; height:95%; text-align:center;">
       <label style="display:inline-block;">Amount:</label>
       <input id="amount" type="number" value="10" min="0" step="1" style="display:inline-block; width:50%">
       </input>
     </div>
     <div id="add_receiver"
-      style="position:absolute; left:66%; top:10px; width: 33%; height:95%; important; text-align:center;">
+      style="position:absolute; left:66%; top:10px; width: 33%; height:95%; text-align:center;">
       <button onclick="add_receiver()">Add Receiver</button>
     </div>
   </div>
