@@ -2358,8 +2358,8 @@ user-scalable=no">
             v.monthly_aggregation = 0;
             v.monthly_aggregation_start = 0;
             v.monthly_aggregation_end = 0;
-            v.income_integral = v.pledge;
-            v.money_heights = [[v.time_variable, v.pledge]];
+            v.income_integral = v.last_income;
+            v.money_heights = [[v.time_variable, v.last_income]];
             return v;
           })
           window.receivers = JSON.parse(JSON.stringify(event.receivers)).map((v) => {
@@ -2367,8 +2367,8 @@ user-scalable=no">
             v.monthly_aggregation = 0;
             v.monthly_aggregation_start = 0;
             v.monthly_aggregation_end = 0;
-            v.income_integral = v.receive;
-            v.money_heights = [[v.time_variable, v.receive]];
+            v.income_integral = v.last_income;
+            v.money_heights = [[v.time_variable, v.last_income]];
             return v;
           })
           debugger;
@@ -2698,8 +2698,8 @@ user-scalable=no">
       if (pledger_heights.length < 1 || receiver_heights.length < 1)
         return [];
       var distribution = get_distribution(
-        pledger_heights.map((a, i) => { return { name: window.pledgers[i].name, haveNeed: window.pledgers[i].pledge } }),
-        receiver_heights.map((a, i) => { return { name: window.receivers[i].name, haveNeed: window.receivers[i].receive} }));
+        pledger_heights.map((a, i) => { return { name: window.pledgers[i].name, haveNeed: window.pledgers[i].last_income } }),
+        receiver_heights.map((a, i) => { return { name: window.receivers[i].name, haveNeed: window.receivers[i].last_income} }));
       var mouse_under = false;
       for (var i = 0; i < distribution.length; i++) {
         var payment = distribution[i]
