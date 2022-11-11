@@ -1631,45 +1631,17 @@ user-scalable=no">
               }
             ],
             "fragment": `
-            precision highp float;
+precision highp float;
 precision highp int;
-
-
-
-#define iResolution (vec2(width,height))
-#define fragCoord (vPosition*iResolution)
-#define fragColor (gl_FragColor)
-#define iTime time
 
 #define UNIFORM_INSERTION_POINT
 
-
-
 varying vec2 vPosition;
-
-
-//-----------------CONSTANTS MACROS-----------------
 
 #define PI 3.14159265359
 #define E 2.7182818284
 #define GR 1.61803398875
-#define MAX_DIM (max(iResolution.x,iResolution.y))
-
-//-----------------UTILITY MACROS-----------------
-
-#define sphereN(uv) (clamp(1.0-length(uv*2.0-1.0), 0.0, 1.0))
-#define clip(x) (smoothstep(0.25, .75, x))
-#define TIMES_DETAILED (1.0)
-#define angle(uv) (atan(uv.y, uv.x))
-#define angle_percent(uv) ((angle(uv)/PI+1.0)/2.0)
-#define hash(p) (fract(sin(vec2( dot(p,vec2(127.5,313.7)),dot(p,vec2(239.5,185.3))))*43458.3453))
-
 #define flux(x) (vec3(cos(x),cos(4.0*PI/3.0+x),cos(2.0*PI/3.0+x))*.5+.5)
-#define rotatePoint(p,n,theta) (p*cos(theta)+cross(n,p)*sin(theta)+n*dot(p,n) *(1.0-cos(theta)))
-
-#define zero(x) (smoothstep(-1.0/PI/E/GR, 1.0/PI/E/GR, sin(x*PI/2.0))*2.0-1.0)
-#define absMin(x,y) (abs(x) < abs(y) ? x: y)
-#define quadrant(uv) (absMin((zero(uv).x), (zero(uv).y))+floor(uv.x/2.0)+floor(uv.y/2.0))
 
 float saw(float x)
 {
@@ -1691,15 +1663,13 @@ vec4 saw(vec4 x)
     return vec4(saw(x.x), saw(x.y), saw(x.z), saw(x.w));
 }
 
-
-
 void main()
 {
-    vec2 uv = fragCoord.xy / iResolution.xy*2.-1.;
+    vec2 uv = gl_FragCoord.xy / vec2(width, height) * 2.-1.;
     float start_point = 1.-smoothstep(0., .01, 1./3.-abs(uv.x));
-  	float time_line = 1.-smoothstep(0., 10., saw(uv.x*time_window*3.)*iResolution.x/time_window);
-    fragColor = vec4(1.-time_line*start_point);
-  	fragColor.a = 1.;
+  	float time_line = 1.-smoothstep(0., 10., saw(uv.x*time_window*3.)*width/time_window);
+    gl_FragColor = vec4(1.-time_line*start_point);
+  	gl_FragColor.a = 1.;
 }
 `,
             "vertex": `
@@ -1712,124 +1682,6 @@ attribute highp vec4 vertex;
 
 varying vec2 vPosition;
 void main(void) {
-    vPosition = vertex.xy;
-    gl_Position = vec4(vPosition*2.-1., 0., 1.);
-}
-            `
-          },
-          {
-            "name": "graphs-program",
-            "uniforms": [
-              {
-                "type": "FLOAT",
-                "name": "width",
-                "value": () => { return pipeline.getContext('image-context').canvas.width; }
-              },
-              {
-                "type": "FLOAT",
-                "name": "height",
-                "value": () => { return pipeline.getContext('image-context').canvas.height; }
-              },
-              {
-                "type": "FLOAT",
-                "name": "time",
-                "value": () => { return window.get_time(); }
-              },
-              {
-                "type": "VEC_TWO",
-                "name": "mouse_position",
-                "value": () => { return window.mouse_canvas_position; }
-              },
-              {
-                "type": "FLOAT",
-                "name": "max_amount",
-                "value": () => { return window.last_max_amount }
-              },
-              {
-                "type": "FLOAT",
-                "name": "y_scalar",
-                "value": () => { return window.y_scalar ? window.y_scalar : 1.; }
-              }
-            ],
-            "fragment": `
-            precision highp float;
-precision highp int;
-
-
-
-#define iResolution (vec2(width,height))
-#define fragCoord (vPosition*iResolution)
-#define fragColor (gl_FragColor)
-#define iTime time
-
-#define UNIFORM_INSERTION_POINT
-
-
-
-varying vec2 vPosition;
-varying highp vec2 uv;
-
-
-//-----------------CONSTANTS MACROS-----------------
-
-#define PI 3.14159265359
-#define E 2.7182818284
-#define GR 1.61803398875
-#define MAX_DIM (max(iResolution.x,iResolution.y))
-
-//-----------------UTILITY MACROS-----------------
-
-#define time ((sin(float(__LINE__))+2.0)*time)
-#define sphereN(uv) (clamp(1.0-length(uv*2.0-1.0), 0.0, 1.0))
-#define clip(x) (smoothstep(0.25, .75, x))
-#define TIMES_DETAILED (1.0)
-#define angle(uv) (atan(uv.y, uv.x))
-#define angle_percent(uv) ((angle(uv)/PI+1.0)/2.0)
-#define hash(p) (fract(sin(vec2( dot(p,vec2(127.5,313.7)),dot(p,vec2(239.5,185.3))))*43458.3453))
-
-#define flux(x) (vec3(cos(x),cos(4.0*PI/3.0+x),cos(2.0*PI/3.0+x))*.5+.5)
-#define rotatePoint(p,n,theta) (p*cos(theta)+cross(n,p)*sin(theta)+n*dot(p,n) *(1.0-cos(theta)))
-
-#define zero(x) (smoothstep(-1.0/PI/E/GR, 1.0/PI/E/GR, sin(x*PI/2.0))*2.0-1.0)
-#define absMin(x,y) (abs(x) < abs(y) ? x: y)
-#define quadrant(uv) (absMin((zero(uv).x), (zero(uv).y))+floor(uv.x/2.0)+floor(uv.y/2.0))
-
-float saw(float x)
-{
-    float f = mod(floor(abs(x)), 2.0);
-    float m = mod(abs(x), 1.0);
-    return f*(1.0-m)+(1.0-f)*m;
-}
-vec2 saw(vec2 x)
-{
-    return vec2(saw(x.x), saw(x.y));
-}
-
-vec3 saw(vec3 x)
-{
-    return vec3(saw(x.x), saw(x.y), saw(x.z));
-}
-vec4 saw(vec4 x)
-{
-    return vec4(saw(x.x), saw(x.y), saw(x.z), saw(x.w));
-}
-
-void main()
-{
-    fragColor = vec4(0.,0.,0., 1.)*(1.-smoothstep(0.,.1, saw(uv.y*uv.x*2.)));
-}`,
-            "vertex": `
-precision highp float;
-precision highp int;
-
-#define UNIFORM_INSERTION_POINT
-
-attribute highp vec4 vertex; 
-varying highp vec2 uv;
-varying vec2 vPosition;
-
-void main(void) {
-  	uv = vertex.zw;
     vPosition = vertex.xy;
     gl_Position = vec4(vPosition*2.-1., 0., 1.);
 }
@@ -1878,73 +1730,22 @@ void main(void) {
 precision highp float;
 precision highp int;
 
-
-
-#define iResolution (vec2(width,height))
-#define fragCoord (vPosition*iResolution)
-#define fragColor (gl_FragColor)
-#define iTime time
-
 #define UNIFORM_INSERTION_POINT
-
-
 
 varying vec2 vPosition;
 varying highp float weight;
 varying highp float y_pos;
 
-
-//-----------------CONSTANTS MACROS-----------------
-
 #define PI 3.14159265359
 #define E 2.7182818284
 #define GR 1.61803398875
-#define MAX_DIM (max(iResolution.x,iResolution.y))
-
-//-----------------UTILITY MACROS-----------------
-
 #define time ((sin(float(__LINE__))+2.0)*time)
-#define sphereN(uv) (clamp(1.0-length(uv*2.0-1.0), 0.0, 1.0))
-#define clip(x) (smoothstep(0.25, .75, x))
-#define TIMES_DETAILED (1.0)
-#define angle(uv) (atan(uv.y, uv.x))
-#define angle_percent(uv) ((angle(uv)/PI+1.0)/2.0)
-#define hash(p) (fract(sin(vec2( dot(p,vec2(127.5,313.7)),dot(p,vec2(239.5,185.3))))*43458.3453))
-
 #define flux(x) (vec3(cos(x),cos(4.0*PI/3.0+x),cos(2.0*PI/3.0+x))*.5+.5)
-#define rotatePoint(p,n,theta) (p*cos(theta)+cross(n,p)*sin(theta)+n*dot(p,n) *(1.0-cos(theta)))
-
-#define zero(x) (smoothstep(-1.0/PI/E/GR, 1.0/PI/E/GR, sin(x*PI/2.0))*2.0-1.0)
-#define absMin(x,y) (abs(x) < abs(y) ? x: y)
-#define quadrant(uv) (absMin((zero(uv).x), (zero(uv).y))+floor(uv.x/2.0)+floor(uv.y/2.0))
-
-float saw(float x)
-{
-    float f = mod(floor(abs(x)), 2.0);
-    float m = mod(abs(x), 1.0);
-    return f*(1.0-m)+(1.0-f)*m;
-}
-vec2 saw(vec2 x)
-{
-    return vec2(saw(x.x), saw(x.y));
-}
-
-vec3 saw(vec3 x)
-{
-    return vec3(saw(x.x), saw(x.y), saw(x.z));
-}
-vec4 saw(vec4 x)
-{
-    return vec4(saw(x.x), saw(x.y), saw(x.z), saw(x.w));
-}
-
-
 
 void main()
 {
-    fragColor.rgb = flux((weight/max_amount*.5+.5)*PI).rbg;//vec3(weight)*min(max(mod(weight-time+vPosition.x, 3.)-1., 0.), 1.);//vec3(flux(weight*PI).rbg);//+vPosition.x*PI));
-  
-    fragColor.a = 1.;
+    gl_FragColor.rgb = flux((weight/max_amount)*PI);
+    gl_FragColor.a = 1.;
 }`,
             "vertex": `
 precision highp float;
@@ -2008,45 +1809,18 @@ void main(void) {
 precision highp float;
 precision highp int;
 
-
-
-#define iResolution (vec2(width,height))
-#define fragCoord (vPosition*iResolution)
-#define fragColor (gl_FragColor)
-#define iTime time
-
 #define UNIFORM_INSERTION_POINT
-
-
 
 varying vec2 vPosition;
 varying highp float weight;
 varying highp float y_pos;
 
-
-//-----------------CONSTANTS MACROS-----------------
-
 #define PI 3.14159265359
 #define E 2.7182818284
 #define GR 1.61803398875
-#define MAX_DIM (max(iResolution.x,iResolution.y))
-
-//-----------------UTILITY MACROS-----------------
 
 #define time ((sin(float(__LINE__))+2.0)*time)
-#define sphereN(uv) (clamp(1.0-length(uv*2.0-1.0), 0.0, 1.0))
-#define clip(x) (smoothstep(0.25, .75, x))
-#define TIMES_DETAILED (1.0)
-#define angle(uv) (atan(uv.y, uv.x))
-#define angle_percent(uv) ((angle(uv)/PI+1.0)/2.0)
-#define hash(p) (fract(sin(vec2( dot(p,vec2(127.5,313.7)),dot(p,vec2(239.5,185.3))))*43458.3453))
-
 #define flux(x) (vec3(cos(x),cos(4.0*PI/3.0+x),cos(2.0*PI/3.0+x))*.5+.5)
-#define rotatePoint(p,n,theta) (p*cos(theta)+cross(n,p)*sin(theta)+n*dot(p,n) *(1.0-cos(theta)))
-
-#define zero(x) (smoothstep(-1.0/PI/E/GR, 1.0/PI/E/GR, sin(x*PI/2.0))*2.0-1.0)
-#define absMin(x,y) (abs(x) < abs(y) ? x: y)
-#define quadrant(uv) (absMin((zero(uv).x), (zero(uv).y))+floor(uv.x/2.0)+floor(uv.y/2.0))
 
 float saw(float x)
 {
@@ -2068,15 +1842,12 @@ vec4 saw(vec4 x)
     return vec4(saw(x.x), saw(x.y), saw(x.z), saw(x.w));
 }
 
-
-
 void main()
 {
-    fragColor.rgb = flux(weight/max_amount*PI*1.5).rbg;//vec3(weight)*min(max(mod(weight-time+vPosition.x, 3.)-1., 0.), 1.);//vec3(flux(weight*PI).rbg);//+vPosition.x*PI));
-  
+    gl_FragColor.rgb = flux((1.-weight/max_amount)*PI*1.5).rbg;
   	float black_line = smoothstep(0., .1/max_amount, saw(y_pos*2.));
-  	fragColor.rgb = min(fragColor.rgb, vec3(black_line));
-    fragColor.a = .5+.5*saw(black_line*2.);
+  	gl_FragColor.rgb = min(gl_FragColor.rgb, vec3(black_line));
+    gl_FragColor.a = .5+.5*saw(black_line*2.);
 }`,
             "vertex": `
 precision highp float;
@@ -2135,42 +1906,14 @@ void main(void) {
 precision highp float;
 precision highp int;
 
-
-
-#define iResolution (vec2(width,height))
-#define fragCoord (vPosition*iResolution)
-#define fragColor (gl_FragColor)
-#define iTime time
-
 #define UNIFORM_INSERTION_POINT
 
-
-
 varying vec2 vPosition;
-
-
-//-----------------CONSTANTS MACROS-----------------
 
 #define PI 3.14159265359
 #define E 2.7182818284
 #define GR 1.61803398875
-#define MAX_DIM (max(iResolution.x,iResolution.y))
-
-//-----------------UTILITY MACROS-----------------
-
-#define sphereN(uv) (clamp(1.0-length(uv*2.0-1.0), 0.0, 1.0))
-#define clip(x) (smoothstep(0.25, .75, x))
-#define TIMES_DETAILED (1.0)
-#define angle(uv) (atan(uv.y, uv.x))
-#define angle_percent(uv) ((angle(uv)/PI+1.0)/2.0)
-#define hash(p) (fract(sin(vec2( dot(p,vec2(127.5,313.7)),dot(p,vec2(239.5,185.3))))*43458.3453))
-
 #define flux(x) (vec3(cos(x),cos(4.0*PI/3.0+x),cos(2.0*PI/3.0+x))*.5+.5)
-#define rotatePoint(p,n,theta) (p*cos(theta)+cross(n,p)*sin(theta)+n*dot(p,n) *(1.0-cos(theta)))
-
-#define zero(x) (smoothstep(-1.0/PI/E/GR, 1.0/PI/E/GR, sin(x*PI/2.0))*2.0-1.0)
-#define absMin(x,y) (abs(x) < abs(y) ? x: y)
-#define quadrant(uv) (absMin((zero(uv).x), (zero(uv).y))+floor(uv.x/2.0)+floor(uv.y/2.0))
 
 float saw(float x)
 {
@@ -2192,16 +1935,14 @@ vec4 saw(vec4 x)
     return vec4(saw(x.x), saw(x.y), saw(x.z), saw(x.w));
 }
 
-
-
 void main()
 {
-    vec2 uv = fragCoord.xy / iResolution.xy*2.-1.;
+    vec2 uv = gl_FragCoord.xy / vec2(width, height) * 2.-1.;
     float start_point = 1.-smoothstep(0., .01, 1./3.-abs(uv.x));
   	float time_line = 1.-smoothstep(0., 1./90., saw(abs(uv.x*3.*sign(uv.x)-1.+time/time_window*3.*2./3.)));
   	float flash =1.;
-    fragColor = GR*vec4(flash,flash, flash, 2.)*time_line*start_point*vec4(vec3(smoothstep(.49, .51, (sin(uv.y*y_scalar*PI/2.))*.5+.5)), 1.);
-  	fragColor.rgb += vec3(1.-smoothstep(0., .01, length(uv-(mouse_position*2.-1.))));
+    gl_FragColor = GR*vec4(flash,flash, flash, 2.)*time_line*start_point*vec4(vec3(smoothstep(.49, .51, (sin(uv.y*y_scalar*PI/2.))*.5+.5)), 1.);
+  	gl_FragColor.rgb += vec3(1.-smoothstep(0., .01, length(uv-(mouse_position*2.-1.))));
 }`,
             "vertex": `
 precision highp float;
@@ -2274,25 +2015,6 @@ void main(void) {
             "indices": () => {
               var indices = []
               var vertices = window.final_wealth_trapezoids.flat();
-              for (var i = 0; i < vertices.length / 4; i++)
-                indices.push(i);
-              return indices
-            }
-          },
-          {
-            "name": "graphs-stage",
-            "type": "MESH_TRIANGLES",
-            "context": "image-context",
-            "program": "graphs-program",
-            "vertices": () => {
-              var gl = pipeline.getContext('image-context').gl
-              gl.enable(gl.BLEND);
-              gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-              return [window.final_graphs_trapezoids.flat()]
-            },
-            "indices": () => {
-              var indices = []
-              var vertices = window.final_graphs_trapezoids.flat();
               for (var i = 0; i < vertices.length / 4; i++)
                 indices.push(i);
               return indices
@@ -2454,9 +2176,6 @@ void main(void) {
       user_join_event(-5 - 5. * Math.pow(Math.random(), 2.), Math.random() * 30.)
     } while (Math.random() > .25)
 
-    // window.pledgers = window.pledgers.sort((a, b) => { return b.pledge - a.pledge })
-    // window.receivers = window.receivers.sort((a, b) => { return b.receive - a.receive })
-
     function get_amount() {
       var amount = Number(document.getElementById("amount").value)
       //$("#amount").val(Math.random())
@@ -2486,13 +2205,11 @@ void main(void) {
     }
 
     function clear_all() {
-      window.last_graphs_trapezoids = [[], []]
       window.last_wealth_trapezoids = [[], []]
       window.last_payment_trapezoids = [[], [], [], []]
 
       window.final_payment_trapezoids = []
       window.final_wealth_trapezoids = []
-      window.final_graphs_trapezoids = []
 
       window.pledgers = []
       window.receivers = []
@@ -2507,7 +2224,6 @@ void main(void) {
     window.mouse_page_position = [0, 0]
     window.mouse_canvas_position = [0, 0]
 
-    window.last_graphs_trapezoids = [[], []]
     window.last_wealth_trapezoids = [[], []]
     window.last_payment_trapezoids = [[], [], [], []]
     label_html = []
@@ -2581,7 +2297,6 @@ void main(void) {
       elapsed_time = Math.floor(1. + elapsed_time)
       total_members = window.pledgers.length + window.receivers.length
       total_connections = window.pledgers.length * window.receivers.length
-      parse_events();
       totalHave = all_pledger_heights().reduce((a, b) => a + max_height(b), 0)
       totalNeed = all_receiver_heights().reduce((a, b) => a + max_height(b), 0)
       max_wealth = Math.max(totalHave, totalNeed)
@@ -2636,7 +2351,7 @@ void main(void) {
       return undefined;
     }
 
-    function parse_events(full_region = false, for_month = Math.floor(get_time() / time_window)) {
+    function parse_events(for_month = Math.floor(get_time() / time_window)) {
       window.pledgers = []
       window.receivers = []
       var thread_safe_events = JSON.parse(JSON.stringify(window.event_list))
@@ -2794,7 +2509,7 @@ void main(void) {
       return false
     }
 
-    function pledgers_geometry(full_region = false) {
+    function pledgers_geometry() {
       var vertices = []
 
       var mouse_under = false;
@@ -2812,7 +2527,7 @@ void main(void) {
         //current_pledge -= min_wealth / max_transferable;
         pledger.monthly_aggregation_start = (current_pledge);
         pledger.monthly_aggregation = (current_pledge);
-        for (var j = 0; j < Math.floor(money_heights.length) - 1; j += 2) {
+        for (var j = 0; j < money_heights.length - 1; j += 2) {
           var from_time = money_heights[j][0] / time_window - Math.floor(get_time() / time_window)
           var to_time = money_heights[j + 1][0] / time_window - Math.floor(get_time() / time_window)
 
@@ -2822,58 +2537,11 @@ void main(void) {
           max_wealth = Math.max(Math.max(from_wealth, to_wealth), max_wealth)
 
           let trapezoid = [
-            [from_time / 3., current_pledge, full_region ? to_wealth : from_wealth, full_region ? current_pledge : 0],
-            [to_time / 3., current_pledge, full_region ? to_wealth : from_wealth, full_region ? current_pledge : 0],
-            [to_time / 3., current_pledge + to_wealth, to_wealth, full_region ? current_pledge : 1],
-            [from_time / 3., current_pledge + from_wealth, from_wealth, full_region ? current_pledge : 1]]
-          if (full_region) {
+            [from_time / 3., current_pledge, from_wealth, 0],
+            [to_time / 3., current_pledge, from_wealth, 0],
+            [to_time / 3., current_pledge + to_wealth, to_wealth, 1],
+            [from_time / 3., current_pledge + from_wealth, from_wealth, 1]]
 
-            var old_trapezoid = JSON.parse(JSON.stringify(trapezoid))
-
-            var min_x = Math.min(Math.min(Math.min(old_trapezoid[0][0],
-              old_trapezoid[1][0]),
-              old_trapezoid[2][0]),
-              old_trapezoid[3][0])
-            var min_y = Math.min(Math.min(Math.min(old_trapezoid[0][1],
-              old_trapezoid[1][1]),
-              old_trapezoid[2][1]),
-              old_trapezoid[3][1])
-            var max_x = Math.max(Math.max(Math.max(old_trapezoid[0][0],
-              old_trapezoid[1][0]),
-              old_trapezoid[2][0]),
-              old_trapezoid[3][0])
-            var max_y = Math.max(Math.max(Math.max(old_trapezoid[0][1],
-              old_trapezoid[1][1]),
-              old_trapezoid[2][1]),
-              old_trapezoid[3][1])
-
-            trapezoid[0][0] = min_x
-            trapezoid[0][1] = min_y
-
-            trapezoid[1][0] = max_x
-            trapezoid[1][1] = min_y
-
-            trapezoid[2][0] = max_x
-            trapezoid[2][1] = max_y
-
-            trapezoid[3][0] = min_x
-            trapezoid[3][1] = max_y
-
-            if (from_wealth < 0)
-              to_wealth = Math.abs(from_wealth)
-
-            trapezoid[0][2] = to_wealth * max_transferable
-            trapezoid[0][3] = 0
-
-            trapezoid[1][2] = to_wealth * max_transferable
-            trapezoid[1][3] = 0
-
-            trapezoid[2][2] = to_wealth * max_transferable
-            trapezoid[2][3] = 1
-
-            trapezoid[3][2] = to_wealth * max_transferable
-            trapezoid[3][3] = 1
-          }
           var mesh = mesh_trapezoid(trapezoid);
           if (!mesh_is_visible(trapezoid.flat()))
             mesh = mesh.map((v) => Math.sign(v) * 3.)
@@ -2909,7 +2577,7 @@ void main(void) {
 
       return vertices.flat();
     }
-    function receivers_geometry(full_region = false) {
+    function receivers_geometry() {
       var vertices = []
 
       var mouse_under = false;
@@ -2929,7 +2597,7 @@ void main(void) {
         // current_receive -= min_wealth / max_transferable;
         receiver.monthly_aggregation_start = (current_receive);
         receiver.monthly_aggregation = (current_receive);
-        for (var j = 0; j < Math.floor(money_heights.length) - 1; j += 2) {
+        for (var j = 0; j < money_heights.length - 1; j += 2) {
           var from_time = money_heights[j][0] / time_window - Math.floor(get_time() / time_window)
           var to_time = money_heights[j + 1][0] / time_window - Math.floor(get_time() / time_window)
 
@@ -2938,59 +2606,10 @@ void main(void) {
 
           max_wealth = Math.max(Math.max(from_wealth, to_wealth), max_wealth)
 
-          let trapezoid = [[1. - from_time / 3., current_receive, full_region ? to_wealth : from_wealth, full_region ? current_pledge : 0],
-          [1. - to_time / 3., current_receive, full_region ? to_wealth : from_wealth, full_region ? current_pledge : 0],
-          [1. - to_time / 3., current_receive + to_wealth, to_wealth, full_region ? current_pledge : 1],
-          [1. - from_time / 3., current_receive + from_wealth, from_wealth, full_region ? current_pledge : 1]]
-
-          if (full_region) {
-
-            var old_trapezoid = JSON.parse(JSON.stringify(trapezoid))
-
-            var min_x = Math.min(Math.min(Math.min(old_trapezoid[0][0],
-              old_trapezoid[1][0]),
-              old_trapezoid[2][0]),
-              old_trapezoid[3][0])
-            var min_y = Math.min(Math.min(Math.min(old_trapezoid[0][1],
-              old_trapezoid[1][1]),
-              old_trapezoid[2][1]),
-              old_trapezoid[3][1])
-            var max_x = Math.max(Math.max(Math.max(old_trapezoid[0][0],
-              old_trapezoid[1][0]),
-              old_trapezoid[2][0]),
-              old_trapezoid[3][0])
-            var max_y = Math.max(Math.max(Math.max(old_trapezoid[0][1],
-              old_trapezoid[1][1]),
-              old_trapezoid[2][1]),
-              old_trapezoid[3][1])
-
-            trapezoid[0][0] = min_x
-            trapezoid[0][1] = min_y
-
-            trapezoid[1][0] = max_x
-            trapezoid[1][1] = min_y
-
-            trapezoid[2][0] = max_x
-            trapezoid[2][1] = max_y
-
-            trapezoid[3][0] = min_x
-            trapezoid[3][1] = max_y
-
-            if (from_wealth < 0)
-              to_wealth = Math.abs(from_wealth)
-
-            trapezoid[0][2] = to_wealth * max_transferable
-            trapezoid[0][3] = 0
-
-            trapezoid[1][2] = to_wealth * max_transferable
-            trapezoid[1][3] = 0
-
-            trapezoid[2][2] = to_wealth * max_transferable
-            trapezoid[2][3] = 1
-
-            trapezoid[3][2] = to_wealth * max_transferable
-            trapezoid[3][3] = 1
-          }
+          let trapezoid = [[1. - from_time / 3., current_receive, from_wealth, 0],
+          [1. - to_time / 3., current_receive, from_wealth, 0],
+          [1. - to_time / 3., current_receive + to_wealth, to_wealth, 1],
+          [1. - from_time / 3., current_receive + from_wealth, from_wealth, 1]]
 
           var mesh = mesh_trapezoid(trapezoid);
           if (!mesh_is_visible(trapezoid.flat()))
@@ -3107,12 +2726,10 @@ void main(void) {
 
     window.renderLoop = () => {
 
-
-
       monthly_balance_event()
+      parse_events();
       refresh_default_metrics();
-      parse_events(true);
-      var vertices = [pledgers_geometry(true), receivers_geometry(true)].flat().flat()
+      var vertices = [pledgers_geometry(), receivers_geometry(), payments_geometry()].flat()
 
       var time = new Date().getTime() / 1E3;
       if (!window.last_trapezoid_morph)
@@ -3132,68 +2749,7 @@ void main(void) {
       var max_amount = Math.max(maxNeed, maxHave) / max_transferable;
       if (!window.last_max_amount)
         window.last_max_amount = 1;
-      window.last_max_amount += (max_amount - window.last_max_amount) * window.trapezoid_morph_step * 10.
-      var index = 0;
-      for (var i = 0; i < window.pledgers.length; i++) {
-        if (!window.last_graphs_trapezoids[0][i])
-          window.last_graphs_trapezoids[0][i] = []
-        var trapezoids = window.pledgers[i].trapezoids;
-        var sub_index = 0;
-        for (var j = 0; j < trapezoids.length; j++) {
-          if (!window.last_graphs_trapezoids[0][i][j])
-            window.last_graphs_trapezoids[0][i][j] = []
-          var trapezoid = trapezoids[j]
-          for (var k = 0; k < trapezoid.length; k++) {
-            if (window.last_graphs_trapezoids[0][i][j][k] == undefined) {
-              if (k % 4 == 0)
-                window.last_graphs_trapezoids[0][i][j][k] = .5
-              else
-                window.last_graphs_trapezoids[0][i][j][k] = trapezoid[k]
-            }
-            var delta = (trapezoid[k] - window.last_graphs_trapezoids[0][i][j][k]);
-            window.last_graphs_trapezoids[0][i][j][k] += delta * Math.max(window.trapezoid_morph_step, 1. / 10.);
-          }
-          sub_index++
-        }
-        window.last_graphs_trapezoids[0][i] = window.last_graphs_trapezoids[0][i].slice(0, sub_index)
-        index++
-      }
-      window.last_graphs_trapezoids[0] = window.last_graphs_trapezoids[0].slice(0, index)
-      var index = 0;
-      for (var i = 0; i < window.receivers.length; i++) {
-        if (!window.last_graphs_trapezoids[1][i])
-          window.last_graphs_trapezoids[1][i] = []
-        var trapezoids = window.receivers[i].trapezoids;
-        var sub_index = 0
-        for (var j = 0; j < trapezoids.length; j++) {
-          if (!window.last_graphs_trapezoids[1][i][j])
-            window.last_graphs_trapezoids[1][i][j] = []
-          var trapezoid = trapezoids[j]
-          for (var k = 0; k < trapezoid.length; k++) {
-            if (window.last_graphs_trapezoids[1][i][j][k] == undefined) {
-              if (k % 4 == 0)
-                window.last_graphs_trapezoids[1][i][j][k] = .5
-              else
-                window.last_graphs_trapezoids[1][i][j][k] = trapezoid[k]
-            }
-            var delta = (trapezoid[k] - window.last_graphs_trapezoids[1][i][j][k]);
-            window.last_graphs_trapezoids[1][i][j][k] += delta * Math.max(window.trapezoid_morph_step, 1. / 10.);
-          }
-          sub_index++
-        }
-        window.last_graphs_trapezoids[1][i] = window.last_graphs_trapezoids[1][i].slice(0, sub_index)
-        index++
-      }
-      window.last_graphs_trapezoids[1] = window.last_graphs_trapezoids[1].slice(0, index)
-      window.final_graphs_trapezoids = []
-      for (var i = 0; i < window.last_graphs_trapezoids.length; i++)
-        for (var j = 0; j < window.last_graphs_trapezoids[i].length; j++)
-          for (var k = 0; k < window.last_graphs_trapezoids[i][j].length; k++)
-            if (mesh_is_visible(window.last_graphs_trapezoids[i][j][k]))
-              window.final_graphs_trapezoids.push(window.last_graphs_trapezoids[i][j][k])
-      parse_events();
-      refresh_default_metrics();
-      var vertices = [pledgers_geometry(), receivers_geometry(), payments_geometry()].flat()
+      window.last_max_amount += (max_amount - window.last_max_amount) * window.trapezoid_morph_step * 5.
 
 
       var index = 0;
