@@ -660,7 +660,6 @@ user-scalable=no">
       GLSLJS.prototype = function () {
       }
 
-
       function OpenGLStage() {
         this.name = ""
         this.type = ""
@@ -783,7 +782,6 @@ user-scalable=no">
         };
     })();
 
-
     var api_names = ["webgl", "experimental-webgl", "webkit-3d", "moz-webgl"];
 
     var OpenGLPipeline = function (pipleline_proto) { // "Constructor."
@@ -879,11 +877,9 @@ user-scalable=no">
         while (this.contexts.length < new_contexts.length)
           this.contexts.push(new OpenGLContext());
 
-
         for (var i = 0; i < new_contexts.length; i++)
           this.contexts[i].setProto(new_contexts[i]);
       }
-
 
       var new_programs = new_proto.programs;
 
@@ -975,7 +971,6 @@ user-scalable=no">
 
       this.resizeCanvas();
 
-
       window.document.body.append(this.canvas)
     }
 
@@ -1006,7 +1001,6 @@ user-scalable=no">
         console.error("Error refreshing image: " + e);
       }
     }
-
 
     OpenGLContext.prototype.destroy = function () {
       var numTextureUnits = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
@@ -1075,9 +1069,7 @@ user-scalable=no">
         this.gl.enable(this.gl.DEPTH_TEST);
     };
 
-
     OpenGLContext.prototype.resizeCanvas = function () {
-
 
       if (this.context.width.type == OpenGLDimension.Type.SCREEN_SIZE) {
         this.computed_width = window.innerWidth;
@@ -1148,7 +1140,6 @@ user-scalable=no">
     OpenGLProgram.prototype.setProto = function (program_proto) {
       this.program = program_proto;
 
-
       this.cached_uniform_evals = [];
       for (var i = 0; this.program.uniforms && i < this.program.uniforms.length; i++)
         this.cached_uniform_evals[i] = this.program.uniforms[i].value;
@@ -1162,7 +1153,6 @@ user-scalable=no">
         var value = this.cached_uniform_evals[i].bind(this)(context, this, stage);
 
         var type = this.program.uniforms[i].type;
-
 
         inner: switch (type) {
           case OpenGLUniform.Type.FLOAT:
@@ -1237,12 +1227,10 @@ user-scalable=no">
       }
     }
 
-
     OpenGLProgram.prototype.getUniforms = function () {
       var str = "";
       for (var i = 0; (this.program.uniforms) && (i < this.program.uniforms.length); i++) {
         var type = this.program.uniforms[i].type;
-
 
         inner: switch (type) {
           case OpenGLUniform.Type.FLOAT: type = 'float'; break inner;
@@ -1264,14 +1252,12 @@ user-scalable=no">
           case OpenGLUniform.Type.SAMPLERCUBE: type = 'samplerCube'; break inner;
         }
 
-
         var name = this.program.uniforms[i].name;
 
         str += "uniform " + type + " " + name + ";\n";
       }
       return str;
     }
-
 
     OpenGLProgram.prototype.getTemplateVertexShader = function (context) {
       var str = default_vertex_shader + ""
@@ -1439,7 +1425,6 @@ user-scalable=no">
 
       context.gl.useProgram(shader_program);
 
-
       shader_program.vertexAttribute = context.gl.getAttribLocation(shader_program, "vertex");
       if (shader_program.vertexAttribute > -1)
         context.gl.enableVertexAttribArray(shader_program.vertexAttribute);
@@ -1451,7 +1436,6 @@ user-scalable=no">
       shader_program.shapeAttribute = context.gl.getAttribLocation(shader_program, "shape");
       if (shader_program.shapeAttribute > -1)
         context.gl.enableVertexAttribArray(shader_program.shapeAttribute);
-
 
       return shader_program;
     }
@@ -1486,8 +1470,6 @@ user-scalable=no">
       else if (this.stage.type == OpenGLStageTypes.MESH_TRIANGLE_STRIP)
         context.gl.drawElements(context.gl.TRIANGLE_STRIP, this.index_buffer.numItems, context.gl.UNSIGNED_SHORT, 0);
     };
-
-
 
     OpenGLStage.prototype.iniAttributeBuffers = function (context) {
 
@@ -1744,7 +1726,7 @@ varying highp float y_pos;
 
 void main()
 {
-    gl_FragColor.rgb = flux((weight/max_amount)*PI);
+    gl_FragColor.rgb = flux((weight/max_amount)*PI*GR);
     gl_FragColor.a = 1.;
 }`,
             "vertex": `
@@ -2219,8 +2201,6 @@ void main(void) {
       window.pause_start_time = window.uniform_start_time
     }
 
-
-
     window.mouse_page_position = [0, 0]
     window.mouse_canvas_position = [0, 0]
 
@@ -2233,7 +2213,6 @@ void main(void) {
     window.payment_clicked = null;
     window.receiver_clicked = null;
     window.mouse_busy = false;
-
 
     function vectors_are_colinear(vector_a, vector_b) {
       return Math.abs(vector_a[0] * vector_b[1] -
@@ -2722,8 +2701,6 @@ void main(void) {
 
     window.last_month = -1.;
 
-
-
     window.renderLoop = () => {
 
       monthly_balance_event()
@@ -2750,7 +2727,6 @@ void main(void) {
       if (!window.last_max_amount)
         window.last_max_amount = 1;
       window.last_max_amount += (max_amount - window.last_max_amount) * window.trapezoid_morph_step * 5.
-
 
       var index = 0;
       for (var i = 0; i < window.pledgers.length; i++) {
