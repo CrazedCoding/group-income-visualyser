@@ -2318,8 +2318,8 @@ user-scalable=no">
           var time_difference_from = (event.when - get_pledger_or_receiver(event.from).time_variable) / time_window
           var time_difference_to = (event.when - get_pledger_or_receiver(event.to).time_variable) / time_window
 
-          var old_from_height = get_pledger_or_receiver(event.from).last_income;// + time_difference_from * get_pledger_or_receiver(event.from).last_income;
-          var old_to_height = get_pledger_or_receiver(event.to).last_income;// + time_difference_to * get_pledger_or_receiver(event.to).last_income;
+          var old_from_height = get_pledger_or_receiver(event.from).income_integral;// + time_difference_from * get_pledger_or_receiver(event.from).last_income;
+          var old_to_height = get_pledger_or_receiver(event.to).income_integral;// + time_difference_to * get_pledger_or_receiver(event.to).last_income;
           var new_from_height = old_from_height - event.amount;
           var new_to_height = old_to_height - event.amount;
 
@@ -2645,7 +2645,7 @@ user-scalable=no">
             mesh = mesh.map((v) => Math.sign(v) * 3.)
           receiver.trapezoids.push(mesh)
           vertices.push(mesh);
-          label_html.push("user" + (name) + " receives " + round_money(money_heights[j][1]) + "<br>");
+          label_html.push("user" + (name) + " needs " + round_money(money_heights[j][1]) + "<br>");
           var avg_x = (trapezoid[0][0]+trapezoid[1][0])/2.;
           var avg_y = (trapezoid[0][1]+trapezoid[1][1]+trapezoid[2][1]+trapezoid[3][1])/4;
           label_positions.push([avg_x, avg_y])
