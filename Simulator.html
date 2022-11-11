@@ -2165,18 +2165,16 @@ void main(void) {
     }
 
     function get_distribution(pledgers, receivers) {
-      return adjustedDistribution({
-        distribution: unadjustedDistribution({
-          haveNeeds: [
-            pledgers,
-            receivers.map(r => {
-              var s = cloneDeep(r);
-              s.haveNeed *= -1.;
-              return s;
-            })].flat(),
-          minimize: true
-        }), payments: window.current_monthly_payments, dueOn: 0
-      });
+      return unadjustedDistribution({
+        haveNeeds: [
+          pledgers,
+          receivers.map(r => {
+            var s = cloneDeep(r);
+            s.haveNeed *= -1.;
+            return s;
+          })].flat(),
+        minimize: true
+      })
     }
 
     function add_pledger() {
@@ -2187,6 +2185,9 @@ void main(void) {
     }
 
     function clear_all() {
+      window.distribution_locked = false;
+      window.last_distribution = null;
+
       window.last_wealth_trapezoids = [[], []]
       window.last_payment_trapezoids = [[], [], [], []]
 
@@ -2359,6 +2360,7 @@ void main(void) {
           window.receivers = window.receivers.filter((v) => { return v.name != event.name })
         }
         else if (event.type == EVENT_TYPES.PAYMENT) {
+          window.distribution_locked = true;
           var pledger = get_pledger_or_receiver(event.from);
           var receiver = get_pledger_or_receiver(event.to);
           var time_difference_from = (event.when - pledger.time_variable) / time_window
@@ -2400,6 +2402,8 @@ void main(void) {
           pledger_or_receiver.money_heights.push([pledger_or_receiver.time_variable, pledger_or_receiver.income_integral])
         }
         else if (event.type == EVENT_TYPES.MONTHLY_BALANCE) {
+          window.last_distribution = null;
+          window.distribution_locked = false;
           window.pledgers = JSON.parse(JSON.stringify(event.pledgers)).map((v) => {
             v.time_variable = event.when;
             v.monthly_aggregation = 0;
@@ -2420,6 +2424,15 @@ void main(void) {
           })
           window.current_payment_trapezoids = []
           window.current_monthly_payments = []
+        }
+
+        var pledger_heights = all_pledger_heights()
+        var receiver_heights = all_receiver_heights()
+        if (!window.distribution_locked && pledger_heights.length > 0 && receiver_heights.length > 0) {
+          window.last_distribution = get_distribution(
+            pledger_heights.map((a, i) => { return { name: window.pledgers[i].name, haveNeed: window.pledgers[i].last_income } }),
+            receiver_heights.map((a, i) => { return { name: window.receivers[i].name, haveNeed: window.receivers[i].last_income } })
+          )
         }
       }
       for (var i = 0; i < window.pledgers.length; i++) {
@@ -2503,6 +2516,8 @@ void main(void) {
 
         var max_wealth = 0
         var min_wealth = min_height(money_heights)
+        var avg_x = .5 / 3.;
+        var avg_y = max_height(money_heights) / max_transferable / 2.
         //current_pledge -= min_wealth / max_transferable;
         pledger.monthly_aggregation_start = (current_pledge);
         pledger.monthly_aggregation = (current_pledge);
@@ -2526,10 +2541,10 @@ void main(void) {
             mesh = mesh.map((v) => Math.sign(v) * 3.)
           pledger.trapezoids.push(mesh)
           vertices.push(mesh);
-          label_html.push("user" + (name) + " has " + round_money(money_heights[j][1]) + "<br>");
-          var avg_x = (trapezoid[0][0] + trapezoid[1][0]) / 2;
-          var avg_y = (trapezoid[0][1] + trapezoid[1][1] + trapezoid[2][1] + trapezoid[3][1]) / 4;
-          label_positions.push([avg_x, avg_y])
+          if (j > money_heights.length - 3) {
+            label_html.push("user" + (name) + " has " + round_money(money_heights[j][1]) + "<br>");
+            label_positions.push([avg_x, current_pledge + avg_y])
+          }
           if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
             point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
             mouse_under = true;
@@ -2573,6 +2588,8 @@ void main(void) {
 
         var max_wealth = 0
         var min_wealth = min_height(money_heights)
+        var avg_x = 2.5 / 3.;
+        var avg_y = max_height(money_heights) / max_transferable / 2.
         // current_receive -= min_wealth / max_transferable;
         receiver.monthly_aggregation_start = (current_receive);
         receiver.monthly_aggregation = (current_receive);
@@ -2595,10 +2612,10 @@ void main(void) {
             mesh = mesh.map((v) => Math.sign(v) * 3.)
           receiver.trapezoids.push(mesh)
           vertices.push(mesh);
-          label_html.push("user" + (name) + " needs " + round_money(money_heights[j][1]) + "<br>");
-          var avg_x = (trapezoid[0][0] + trapezoid[1][0]) / 2.;
-          var avg_y = (trapezoid[0][1] + trapezoid[1][1] + trapezoid[2][1] + trapezoid[3][1]) / 4;
-          label_positions.push([avg_x, avg_y])
+          if (j > money_heights.length - 3) {
+            label_html.push("user" + (name) + " needs " + round_money(money_heights[j][1]) + "<br>");
+            label_positions.push([avg_x, avg_y + current_receive])
+          }
           if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
             point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
             mouse_under = true;
@@ -2643,13 +2660,9 @@ void main(void) {
       window.payment_message = ""
       window.todo_payment_trapezoids = [];
       var vertices = []
-      var pledger_heights = all_pledger_heights()
-      var receiver_heights = all_receiver_heights()
-      if (pledger_heights.length < 1 || receiver_heights.length < 1)
-        return [];
-      var distribution = get_distribution(
-        pledger_heights.map((a, i) => { return { name: window.pledgers[i].name, haveNeed: window.pledgers[i].last_income } }),
-        receiver_heights.map((a, i) => { return { name: window.receivers[i].name, haveNeed: window.receivers[i].last_income } }));
+
+      var distribution = [window.current_monthly_payments, adjustedDistribution({ distribution: window.last_distribution ? window.last_distribution : [], payments: window.current_monthly_payments, dueOn: 0 })].flat();
+
       var mouse_under = false;
       for (var i = 0; i < distribution.length; i++) {
         var payment = distribution[i]
@@ -2665,33 +2678,36 @@ void main(void) {
         [2. / 3., receiver.monthly_aggregation, payment.amount / max_transferable, 0],
         [2. / 3., receiver.monthly_aggregation + payment.amount / max_transferable, payment.amount / max_transferable, 1],
         [1. / 3., pledger.monthly_aggregation + payment.amount / max_transferable, payment.amount / max_transferable, 1]]
-
-        window.todo_payment_trapezoids.push(mesh_trapezoid(trapezoid))
-        vertices.push(mesh_trapezoid(trapezoid));
+        trapezoid = window.current_payment_trapezoids[i] ? window.current_payment_trapezoids[i].trapezoid.map(v=>{return [v[0], pledger.monthly_aggregation+v[1]/ max_transferable, v[2]/ max_transferable, v[3]]}) : trapezoid
+        
         label_html.push("" + round_money(payment.amount));
-        var avg_x = (trapezoid[0][0]);
-        var avg_y = (trapezoid[0][1] + trapezoid[3][1]) / 2;
-        label_positions.push([avg_x, avg_y])
-        if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
-          point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
+          var avg_x = (trapezoid[0][0]);
+          var avg_y = (trapezoid[0][1] + trapezoid[3][1]) / 2;
+          label_positions.push([avg_x, avg_y])
+        if (i >= window.current_monthly_payments.length) {
+          window.todo_payment_trapezoids.push(mesh_trapezoid(trapezoid))
+          vertices.push(mesh_trapezoid(trapezoid));
+          if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
+            point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
+            label_html.push("TODO Payment<br>From: user" + (payment.from) + "<br>To: user" + (payment.to) + "<br>Amount: " + round_money(payment.amount) + "<br> <div style='border-bottom: 1px solid #000'></div>");
+            label_positions.push(window.mouse_canvas_position)
+            mouse_under = true;
 
-          label_html.push("TODO Payment<br>From: user" + (payment.from) + "<br>To: user" + (payment.to) + "<br>Amount: " + round_money(payment.amount) + "<br> <div style='border-bottom: 1px solid #000'></div>");
-          label_positions.push(window.mouse_canvas_position)
-          mouse_under = true;
+            var make_payment = `<label style="display:inline-block;">Amount:</label>
+									<input id="payment_amount`+i+`" type="number" value="`+ payment.amount + `" max="` + payment.amount + `"step="1" style="display:inline-block; width:64px">`
+            window.payment_message += (window.payment_message ? "<br>" : "") + "Payment from User" + payment.from + " to User" + payment.to + "<br>" + make_payment +
+              "<button onclick=\"document.getElementById('options_div').style.display='hidden'; user_pay_event(\'" + payment.from + "\', \'" + payment.to + "\', parseFloat(document.getElementById('payment_amount"+i+"').value))\">Make Payment</button>"
 
-          var make_payment = `<label style="display:inline-block;">Amount:</label>
-									<input id="payment_amount" type="number" value="`+ payment.amount + `" max="` + payment.amount + `"step="1" style="display:inline-block; width:64px">`
-          window.payment_message += (window.payment_message ? "<br>" : "") + "Payment from User" + payment.from + " to User" + payment.to + "<br>" + make_payment +
-            "<button onclick=\"document.getElementById('options_div').style.display='hidden'; user_pay_event(\'" + payment.from + "\', \'" + payment.to + "\', parseFloat(document.getElementById('payment_amount').value))\">Make Payment</button>"
-
-          window.payment_clicked = function () {
-            pause();
-            window.show_option(window.payment_message);
+            window.payment_clicked = function () {
+              pause();
+              window.show_option(window.payment_message);
+            }
           }
         }
-
-        pledger.monthly_aggregation += payment.amount / max_transferable;
-        receiver.monthly_aggregation += payment.amount / max_transferable;
+        if (i >= window.current_monthly_payments.length) {
+          pledger.monthly_aggregation += payment.amount / max_transferable;
+          receiver.monthly_aggregation += payment.amount / max_transferable;
+        }
       }
       if (!mouse_under)
         window.payment_clicked = null;
