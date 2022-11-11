@@ -535,7 +535,7 @@ user-scalable=no">
 
     // frontend/model/contracts/shared/distribution/distribution.js
     var tinyNum = 1 / Math.pow(10, DECIMALS_MAX);
-    function unadjustedDistribution({ haveNeeds = [], minimize = true }) {
+    function unadjustedDistribution({ haveNeeds = [], minimize }) {
       const distribution = mincomeProportional(haveNeeds);
       return minimize ? minimizeTotalPaymentsCount(distribution) : distribution;
     }
@@ -2173,7 +2173,7 @@ void main(void) {
             s.haveNeed *= -1.;
             return s;
           })].flat(),
-        minimize: true
+        minimize: window.minimize
       })
     }
 
@@ -2451,6 +2451,11 @@ void main(void) {
         money_heights.push([window.receivers[i].time_variable, window.receivers[i].income_integral])
         window.receivers[i].money_heights = money_heights
       }
+      if(window.distribution_locked) {
+        document.getElementById("lock_message").style.display = 'inline-block'
+      } else {
+        document.getElementById("lock_message").style.display = 'none'
+      }
     }
 
     function round_money(amount, digits = 2) {
@@ -2689,8 +2694,6 @@ void main(void) {
           vertices.push(mesh_trapezoid(trapezoid));
           if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
             point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
-            label_html.push("TODO Payment<br>From: user" + (payment.from) + "<br>To: user" + (payment.to) + "<br>Amount: " + round_money(payment.amount) + "<br> <div style='border-bottom: 1px solid #000'></div>");
-            label_positions.push(window.mouse_canvas_position)
             mouse_under = true;
 
             var make_payment = `<label style="display:inline-block;">Amount:</label>
@@ -2960,6 +2963,14 @@ void main(void) {
       };
       canvas_div.onmousemove = onmousemove
     }
+    window.minimize = false;
+    window.toggle_minimize = ()=>{
+      if(window.distribution_locked) return;
+      var button = document.getElementById("minimize");
+      var onOff = button.innerHTML == "Minimize";
+      window.minimize = onOff;
+      button.innerHTML = onOff ? "Unminimize" :  "Minimize";
+    } 
   </script>
 </head>
 
@@ -2968,10 +2979,15 @@ void main(void) {
     <div class="add_pledger" style="position:absolute; left:0%; top:10px; width: 33%; height:95%; text-align:center;">
       <button onclick="add_pledger()">Add Pledger</button>
     </div>
-    <div class="" style="position:absolute; left:33%; top:10px; width: 33%; height:95%; text-align:center;">
+    <div class="" style="position:absolute; z-index: 3; left:33%; top:10px; width: 33%; height:95%; text-align:center;">
       <label style="display:inline-block;">Amount:</label>
       <input id="amount" type="number" value="10" min="0" step="1" style="display:inline-block; width:50%">
       </input>
+      <br>
+      <br>
+      <button id="minimize" style="display:inline-block;" onclick="window.toggle_minimize()">Minimize</button>
+      <br>
+      <label id="lock_message" style="border:none; background-color: rgba(0,0,0,0) !important; color: #f70!important; display:inline-block;">Distribution Locked</Label>
     </div>
     <div id="add_receiver" style="position:absolute; left:66%; top:10px; width: 33%; height:95%; text-align:center;">
       <button onclick="add_receiver()">Add Receiver</button>
@@ -2984,7 +3000,7 @@ void main(void) {
     </div>
   </div>
   <div id="bottom_div">
-    <div id="controls_div" style="position:absolute; bottom: 5px; left:0%; width: 100%; text-align:center;">
+    <div id="controls_div" style="position:absolute; bottom: 16px; left:0%; width: 100%; text-align:center;">
       <button style="border-color: #f00" onclick="back()">&lt;&lt;</button>
       <button id="pause_button" style="border-color: #f00" onclick="pause()">ll</button>
       <button id="play_button" style="display:none; border-color: #f00" onclick="unpause()">&gt;</button>
