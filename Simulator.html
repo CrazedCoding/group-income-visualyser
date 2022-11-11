@@ -1110,9 +1110,9 @@ user-scalable=no">
                 preserveDrawingBuffer: true,
                 failIfMajorPerformanceCaveat: false
               });
-            this.gl.getExtension("OES_standard_derivatives");
-            this.gl.getExtension("EXT_frag_depth");
-            this.gl.getExtension('OES_texture_float');
+            // this.gl.getExtension("OES_standard_derivatives");
+            // this.gl.getExtension("EXT_frag_depth");
+            // this.gl.getExtension('OES_texture_float');
             // this.glgetExtension('OES_texture_float_linear');
             // this.glgetExtension("OES_element_index_uint");
             // this.glgetExtension("WEBGL_color_buffer_float");
@@ -1183,45 +1183,6 @@ user-scalable=no">
         this.fpsFrameCount = 0;
         this.fpsElapsedTime = 0;
       }
-
-      if (this.context.image && this.context.images) {
-
-        if (this.reloadTextures) {
-
-          for (var i = 0; i < this.context.images.length; i++)
-            this.refreshImage(i);
-
-          // for (var i = 0; i < this.textures.length; i++)
-          //   this.gl.deleteTexture(this.textures[i]);
-          // this.textures = [];
-
-          // for (var i = 0; i < this.context.images.length; i++) {
-          //   if (!this.img_elements[i])
-          //     return;
-
-          //   var texture = this.gl.createTexture();
-          //   this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
-
-          //   // Set the parameters so we can render hany size image.
-          //   this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
-          //   this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
-          //   this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
-          //   this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
-
-          //   // Upload the image into the texture.
-          //   this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.img_elements[i]);
-
-          //   // add the texture to the array of textures.    
-          //   this.textures.push(texture);
-          // }
-          this.reloadTextures = false;
-        }
-      }
-
-
-      ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-      //this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
 
       if (!this.cached_programs)
         this.cached_programs = {};
@@ -1638,57 +1599,36 @@ user-scalable=no">
       this.vertices = new_vertices;;
       this.indices = new_indices;;
 
-      /*
-      var update = false;
-    
-      if(!this.vertices || this.vertices.length!=new_vertices.length || !(this.vertices.every(function(v,i) { return v === new_vertices[i]; })))
-      {
-        this.vertices = new_vertices;;
-        update = true;
+      this.vertex_buffer.itemSize = 4;
+      this.color_buffer.itemSize = 4;
+      this.shape_buffer.itemSize = 4;
+
+      var shader = context.cached_programs[program.program.name + '-' + context.context.name];
+
+      if (this.vertices.length > 0) {
+        context.gl.bindBuffer(context.gl.ARRAY_BUFFER, this.vertex_buffer);
+        context.gl.bufferData(context.gl.ARRAY_BUFFER, new Float32Array(this.vertices[0]), context.gl.DYNAMIC_DRAW);
+        context.gl.enableVertexAttribArray(shader.vertexAttribute);
+        context.gl.vertexAttribPointer(shader.vertexAttribute, this.vertex_buffer.itemSize, context.gl.FLOAT, false, 0, 0);
       }
-    
-      if(!this.indices || this.indices.length!=new_indices.length || !(this.indices.every(function(v,i) { return v === new_indices[i]; })))
-      {
-        this.indices = new_indices;;
-        update = true;
+      if (this.vertices.length > 1) {
+        context.gl.bindBuffer(context.gl.ARRAY_BUFFER, this.color_buffer);
+        context.gl.bufferData(context.gl.ARRAY_BUFFER, new Float32Array(this.vertices[1]), context.gl.DYNAMIC_DRAW);
+        context.gl.enableVertexAttribArray(shader.colorAttribute);
+        context.gl.vertexAttribPointer(shader.colorAttribute, this.color_buffer.itemSize, context.gl.FLOAT, false, 0, 0);
       }
-      */
-
-      //if(update)
-      {
-
-        this.vertex_buffer.itemSize = 4;
-        this.color_buffer.itemSize = 4;
-        this.shape_buffer.itemSize = 4;
-
-        var shader = context.cached_programs[program.program.name + '-' + context.context.name];
-
-        if (this.vertices.length > 0) {
-          context.gl.bindBuffer(context.gl.ARRAY_BUFFER, this.vertex_buffer);
-          context.gl.bufferData(context.gl.ARRAY_BUFFER, new Float32Array(this.vertices[0]), context.gl.DYNAMIC_DRAW);
-          context.gl.enableVertexAttribArray(shader.vertexAttribute);
-          context.gl.vertexAttribPointer(shader.vertexAttribute, this.vertex_buffer.itemSize, context.gl.FLOAT, false, 0, 0);
-        }
-        if (this.vertices.length > 1) {
-          context.gl.bindBuffer(context.gl.ARRAY_BUFFER, this.color_buffer);
-          context.gl.bufferData(context.gl.ARRAY_BUFFER, new Float32Array(this.vertices[1]), context.gl.DYNAMIC_DRAW);
-          context.gl.enableVertexAttribArray(shader.colorAttribute);
-          context.gl.vertexAttribPointer(shader.colorAttribute, this.color_buffer.itemSize, context.gl.FLOAT, false, 0, 0);
-        }
-        if (this.vertices.length > 2) {
-          context.gl.bindBuffer(context.gl.ARRAY_BUFFER, this.shape_buffer);
-          context.gl.bufferData(context.gl.ARRAY_BUFFER, new Float32Array(this.vertices[2]), context.gl.DYNAMIC_DRAW);
-          context.gl.enableVertexAttribArray(shader.shapeAttribute);
-          context.gl.vertexAttribPointer(shader.shapeAttribute, this.shape_buffer.itemSize, context.gl.FLOAT, false, 0, 0);
-        }
-
-        context.gl.bindBuffer(context.gl.ELEMENT_ARRAY_BUFFER, this.index_buffer);
-        context.gl.bufferData(context.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indices), context.gl.DYNAMIC_DRAW);
-        this.index_buffer.itemSize = 1;
-        this.index_buffer.numItems = this.indices.length;
+      if (this.vertices.length > 2) {
+        context.gl.bindBuffer(context.gl.ARRAY_BUFFER, this.shape_buffer);
+        context.gl.bufferData(context.gl.ARRAY_BUFFER, new Float32Array(this.vertices[2]), context.gl.DYNAMIC_DRAW);
+        context.gl.enableVertexAttribArray(shader.shapeAttribute);
+        context.gl.vertexAttribPointer(shader.shapeAttribute, this.shape_buffer.itemSize, context.gl.FLOAT, false, 0, 0);
       }
+
+      context.gl.bindBuffer(context.gl.ELEMENT_ARRAY_BUFFER, this.index_buffer);
+      context.gl.bufferData(context.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indices), context.gl.DYNAMIC_DRAW);
+      this.index_buffer.itemSize = 1;
+      this.index_buffer.numItems = this.indices.length;
     }
-    var reloadTextures = false;
 
     function reload_algorithm() {
 
@@ -1701,19 +1641,6 @@ user-scalable=no">
         if (userAlgorithm && userAlgorithm.pipeline)
           pipeline = new OpenGLPipeline(userAlgorithm.pipeline);
       }
-
-      // if (userAlgorithm &&
-      //   userAlgorithm.html) {
-      //   $(document.body).append(userAlgorithm.html);
-      // }
-
-      // if (userAlgorithm != undefined &&
-      //   userAlgorithm != null &&
-      //   userAlgorithm.client != undefined) {
-      //   document.head.innerHTML += '<script>' +
-      //     userAlgorithm.client + "<script>";
-      //   eval.call(window, userAlgorithm.client)
-      // }
 
       if (pipeline)
         pipeline.renderLoop();
