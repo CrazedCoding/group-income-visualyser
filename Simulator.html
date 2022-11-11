@@ -2304,36 +2304,39 @@ user-scalable=no">
           else {
             window.receivers.push({ name: event.name, receive: Math.abs(event.income), joined: event.when, monthly_aggregation: 0, monthly_aggregation_start: 0, monthly_aggregation_end: 0, trapezoids: [] });
           }
-          get_pledger_or_receiver(event.name).time_variable = event.when
-          get_pledger_or_receiver(event.name).income_integral = Math.abs(event.income)
-          get_pledger_or_receiver(event.name).last_income = Math.abs(event.income)
-          get_pledger_or_receiver(event.name).money_heights = []
-          get_pledger_or_receiver(event.name).money_heights.push([get_pledger_or_receiver(event.name).time_variable, get_pledger_or_receiver(event.name).income_integral])
+          var pledger_or_receiver = get_pledger_or_receiver(event.name);
+          pledger_or_receiver.time_variable = event.when
+          pledger_or_receiver.income_integral = Math.abs(event.income)
+          pledger_or_receiver.last_income = Math.abs(event.income)
+          pledger_or_receiver.money_heights = []
+          pledger_or_receiver.money_heights.push([pledger_or_receiver.time_variable, pledger_or_receiver.income_integral])
         }
         else if (event.type == EVENT_TYPES.LEAVE) {
           window.pledgers = window.pledgers.filter((v) => { return v.name != event.name })
           window.receivers = window.receivers.filter((v) => { return v.name != event.name })
         }
         else if (event.type == EVENT_TYPES.PAYMENT) {
-          var time_difference_from = (event.when - get_pledger_or_receiver(event.from).time_variable) / time_window
-          var time_difference_to = (event.when - get_pledger_or_receiver(event.to).time_variable) / time_window
+          var pledger = get_pledger_or_receiver(event.from);
+          var receiver = get_pledger_or_receiver(event.to);
+          var time_difference_from = (event.when - pledger.time_variable) / time_window
+          var time_difference_to = (event.when - receiver.time_variable) / time_window
 
-          var old_from_height = get_pledger_or_receiver(event.from).income_integral;// + time_difference_from * get_pledger_or_receiver(event.from).last_income;
-          var old_to_height = get_pledger_or_receiver(event.to).income_integral;// + time_difference_to * get_pledger_or_receiver(event.to).last_income;
+          var old_from_height = pledger.income_integral;
+          var old_to_height = receiver.income_integral;
           var new_from_height = old_from_height - event.amount;
           var new_to_height = old_to_height - event.amount;
 
-          get_pledger_or_receiver(event.from).money_heights.push([event.when, old_from_height])
+          pledger.money_heights.push([event.when, old_from_height])
 
-          get_pledger_or_receiver(event.to).money_heights.push([event.when, old_to_height])
+          receiver.money_heights.push([event.when, old_to_height])
 
-          get_pledger_or_receiver(event.from).income_integral = new_from_height
-          get_pledger_or_receiver(event.from).money_heights.push([event.when, new_from_height])
-          get_pledger_or_receiver(event.from).time_variable = event.when
+          pledger.income_integral = new_from_height
+          pledger.money_heights.push([event.when, new_from_height])
+          pledger.time_variable = event.when
 
-          get_pledger_or_receiver(event.to).income_integral = new_to_height
-          get_pledger_or_receiver(event.to).money_heights.push([event.when, new_to_height])
-          get_pledger_or_receiver(event.to).time_variable = event.when
+          receiver.income_integral = new_to_height
+          receiver.money_heights.push([event.when, new_to_height])
+          receiver.time_variable = event.when
 
           var event_time = event.when / time_window - Math.floor(get_time() / time_window)
 
@@ -2345,12 +2348,13 @@ user-scalable=no">
           window.current_monthly_payments.push({ from: event.from, to: event.to, amount: event.amount })
         }
         else if (event.type == EVENT_TYPES.CHANGE_INCOME) {
-          var time_difference = (event.when - get_pledger_or_receiver(event.name).time_variable) / time_window
-          get_pledger_or_receiver(event.name).time_variable = event.when
-          get_pledger_or_receiver(event.name).money_heights.push([get_pledger_or_receiver(event.name).time_variable, get_pledger_or_receiver(event.name).income_integral])
-          get_pledger_or_receiver(event.name).income_integral = Math.abs(event.income)
-          get_pledger_or_receiver(event.name).last_income = Math.abs(event.income)
-          get_pledger_or_receiver(event.name).money_heights.push([get_pledger_or_receiver(event.name).time_variable, get_pledger_or_receiver(event.name).income_integral])
+          var pledger_or_receiver = get_pledger_or_receiver(event.name);
+          var time_difference = (event.when - pledger_or_receiver.time_variable) / time_window
+          pledger_or_receiver.time_variable = event.when
+          pledger_or_receiver.money_heights.push([pledger_or_receiver.time_variable, pledger_or_receiver.income_integral])
+          pledger_or_receiver.income_integral = Math.abs(event.income)
+          pledger_or_receiver.last_income = Math.abs(event.income)
+          pledger_or_receiver.money_heights.push([pledger_or_receiver.time_variable, pledger_or_receiver.income_integral])
         }
         else if (event.type == EVENT_TYPES.MONTHLY_BALANCE) {
           window.pledgers = JSON.parse(JSON.stringify(event.pledgers)).map((v) => { 
@@ -2371,7 +2375,6 @@ user-scalable=no">
             v.money_heights = [[v.time_variable, v.last_income]];
             return v;
           })
-          debugger;
           window.current_payment_trapezoids = []
           window.current_monthly_payments = []
         }
