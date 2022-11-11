@@ -2696,7 +2696,7 @@ void main(void) {
             var make_payment = `<label style="display:inline-block;">Amount:</label>
 									<input id="payment_amount`+i+`" type="number" value="`+ payment.amount + `" max="` + payment.amount + `"step="1" style="display:inline-block; width:64px">`
             window.payment_message += (window.payment_message ? "<br>" : "") + "Payment from User" + payment.from + " to User" + payment.to + "<br>" + make_payment +
-              "<button onclick=\"document.getElementById('options_div').style.display='hidden'; user_pay_event(\'" + payment.from + "\', \'" + payment.to + "\', parseFloat(document.getElementById('payment_amount"+i+"').value))\">Make Payment</button>"
+              "<button onclick=\"document.getElementById('options_div').style.display='hidden'; window.hide_option(); user_pay_event(\'" + payment.from + "\', \'" + payment.to + "\', parseFloat(document.getElementById('payment_amount"+i+"').value))\">Make Payment</button>"
 
             window.payment_clicked = function () {
               pause();
@@ -2933,6 +2933,9 @@ void main(void) {
         options_div.innerHTML = html;
         options_div.style.top = (window.mouse_page_position[1] - canvas_div.offsetTop) + "px";
         options_div.style.left = (window.mouse_page_position[0] - options_div.offsetWidth / 2.) + "px";
+      }
+      window.hide_option = () => {
+        options_div.style.display = "none"
       }
       window.show_labels = () => {
         if (label_html) {
