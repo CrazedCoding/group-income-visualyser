@@ -60,7 +60,7 @@ user-scalable=no">
     #options_div {
       color: #000;
       position: absolute;
-      background-color: rgba(255,255,255,.75);
+      background-color: rgba(255, 255, 255, .75);
       border: 1px solid#77f;
       text-align: center;
       z-index: 10;
@@ -83,7 +83,7 @@ user-scalable=no">
     }
 
     #image-context {
-      z-index: 2!important;
+      z-index: 2 !important;
     }
 
     #bottom_div {
@@ -771,10 +771,6 @@ user-scalable=no">
     const OpenGLStageTypes = Format.OpenGLStage.Type;
 
     var is_safari = (navigator.userAgent.indexOf("iPhone") > -1 || navigator.userAgent.indexOf("iPad") > -1 || navigator.userAgent.indexOf("Safari") > -1) && navigator.userAgent.indexOf("Chrome") == -1;
-    // var Auth, Image, Video, Sound, Person, Comment, MetaAlgorithm, 
-    //     Query, Catalog, Vote, OpenGLDimension, OpenGLUniform, OpenGLContext, 
-    //     OpenGLProgram, OpenGLStage, OpenGLPipeline, AlgorithmState, 
-    //     Algorithm, Custom, Error, Captcha;
 
     window.requestAnimFrame = (function () {
       return window.requestAnimationFrame ||
@@ -875,8 +871,6 @@ user-scalable=no">
 
     OpenGLPipeline.prototype.setProto = function (new_proto) {
 
-      //this.destroy();
-
       var new_contexts = new_proto.contexts;
 
       if (new_contexts) {
@@ -915,7 +909,6 @@ user-scalable=no">
         }
       }
 
-
       var new_stages = new_proto.stages;
 
       if (new_stages) {
@@ -927,7 +920,7 @@ user-scalable=no">
       }
     }
 
-    var OpenGLContext = function (context_proto) { // "Constructor."
+    var OpenGLContext = function (context_proto) {
 
       this.context = context_proto ? context_proto : {};
       errorCode = { error: "", code: "" };
@@ -970,17 +963,13 @@ user-scalable=no">
         this.context.height = context_proto.height;
       }
 
-
-      if (context_proto.images)
-        this.setImages(context_proto.images);
-
       this.textures = [];
 
       if (this.context.width.type == OpenGLDimension.Type.EXACT)
-        this.cached_width_eval = new Function(this.context.width.value);
+        this.cached_width_eval = this.context.width.value;
 
       if (this.context.height.type == OpenGLDimension.Type.EXACT)
-        this.cached_height_eval = new Function(this.context.height.value);
+        this.cached_height_eval = this.context.height.value;
 
       this.initGL();
 
@@ -988,57 +977,6 @@ user-scalable=no">
 
 
       window.document.body.append(this.canvas)
-    }
-
-
-    OpenGLContext.prototype.setImages = function (images) {
-      if (images)
-        this.context.images = images;
-      else
-        this.context.images = [];
-
-      this.refreshImages();
-    };
-    OpenGLContext.prototype.refreshImages = function () {
-      this.img_elements = [];
-
-      var x = document.getElementsByClassName("loaded-image");
-      var i;
-      for (i = 0; i < x.length; i++) {
-        x[i].parentElement.removeChild(x[i]);
-      }
-
-      loadedCanvasCount = 0;
-      for (var i = 0; i < this.context.images.length; i++) {
-        var img = document.createElement('img');
-        img.classList.add("loaded-image");
-        img.id = "loaded-image" + i;
-        this.img_elements.push(img)
-        img.onload = (function () {
-          if ((++loadedCanvasCount) == this.context.images.length) {
-            this.refreshCanvases();
-          }
-        }).bind(this);
-        var url = this.context.images[i].url ? this.context.images[i].url : bin2str(this.context.images[i].image);
-        img.src = url;
-      }
-    }
-
-    OpenGLContext.prototype.refreshCanvases = function () {
-      this.canvases = [];
-      for (var i = 0; i < this.context.images.length; i++) {
-        var canvas = document.createElement('canvas');
-        var img = this.img_elements[i];
-        canvas.width = img.width;
-        canvas.height = img.height;
-        canvas.classList.add("loaded-image");
-        canvas.id = "image-canvas" + i;
-
-        var ctx = canvas.getContext("2d");
-
-        ctx.drawImage(img, 0, 0);
-        this.canvases.push(canvas);
-      }
     }
 
     OpenGLContext.prototype.refreshImage = function (image) {
@@ -1213,7 +1151,7 @@ user-scalable=no">
 
       this.cached_uniform_evals = [];
       for (var i = 0; this.program.uniforms && i < this.program.uniforms.length; i++)
-        this.cached_uniform_evals[i] = new Function(this.program.uniforms[i].value);
+        this.cached_uniform_evals[i] = this.program.uniforms[i].value;
     }
 
     OpenGLProgram.prototype.setUniforms = function (context, stage) {
@@ -1460,7 +1398,7 @@ user-scalable=no">
       var updated = false;
       var index = 0;
       if (this.program.dynamics) for (const glsljs of this.program.dynamics) {
-        this.program.cached_dynamic_functions[index] = new Function(glsljs.value);
+        this.program.cached_dynamic_functions[index] = glsljs.value;
         this.program.cached_dynamic_strings[index] = "";
 
         var value = this.program.cached_dynamic_functions[index]()
@@ -1526,8 +1464,8 @@ user-scalable=no">
     OpenGLStage.prototype.setProto = function (stage_proto) {
       this.stage = stage_proto;
 
-      this.cached_vertices = new Function(this.stage.vertices);
-      this.cached_indices_eval = new Function(this.stage.indices);
+      this.cached_vertices = this.stage.vertices;
+      this.cached_indices_eval = this.stage.indices;
     };
 
     OpenGLStage.prototype.drawMesh = function (context, program) {
@@ -1650,22 +1588,15 @@ user-scalable=no">
     window.algorithm = {
       "name": "Temporal Fairness Algorithm",
       "public": true,
-      "state": {
-        "html": true,
-        "client": true,
-        "server": false
-      },
       "pipeline": {
         "contexts": [
           {
             "name": "image-context",
             "width": {
-              "type": "NEXT_HIGHEST_POWER_OF_TWO",
-              "value": ""
+              "type": "NEXT_HIGHEST_POWER_OF_TWO"
             },
             "height": {
-              "type": "NEXT_HIGHEST_POWER_OF_TWO",
-              "value": ""
+              "type": "NEXT_HIGHEST_POWER_OF_TWO"
             }
           }
         ],
@@ -1676,31 +1607,115 @@ user-scalable=no">
               {
                 "type": "FLOAT",
                 "name": "width",
-                "value": "return pipeline.getContext('image-context').canvas.width;"
+                "value": () => { return pipeline.getContext('image-context').canvas.width; }
               },
               {
                 "type": "FLOAT",
                 "name": "height",
-                "value": "return pipeline.getContext('image-context').canvas.height;"
+                "value": () => { return pipeline.getContext('image-context').canvas.width; }
               },
               {
                 "type": "FLOAT",
                 "name": "time",
-                "value": "return window.get_time();"
+                "value": () => { return window.get_time(); }
               },
               {
                 "type": "FLOAT",
                 "name": "y_scalar",
-                "value": "return window.y_scalar ? window.y_scalar : 1.;"
+                "value": () => { return window.y_scalar ? window.y_scalar : 1.; }
               },
               {
                 "type": "FLOAT",
                 "name": "time_window",
-                "value": "return window.time_window;"
+                "value": () => { return window.time_window; }
               }
             ],
-            "fragment": "\n#extension GL_OES_standard_derivatives : enable\nprecision highp float;\nprecision highp int;\n\n\n\n#define iResolution (vec2(width,height))\n#define fragCoord (vPosition*iResolution)\n#define fragColor (gl_FragColor)\n#define iTime time\n\n#define UNIFORM_INSERTION_POINT\n\n\n\nvarying vec2 vPosition;\n\n\n//-----------------CONSTANTS MACROS-----------------\n\n#define PI 3.14159265359\n#define E 2.7182818284\n#define GR 1.61803398875\n#define MAX_DIM (max(iResolution.x,iResolution.y))\n\n//-----------------UTILITY MACROS-----------------\n\n#define sphereN(uv) (clamp(1.0-length(uv*2.0-1.0), 0.0, 1.0))\n#define clip(x) (smoothstep(0.25, .75, x))\n#define TIMES_DETAILED (1.0)\n#define angle(uv) (atan(uv.y, uv.x))\n#define angle_percent(uv) ((angle(uv)/PI+1.0)/2.0)\n#define hash(p) (fract(sin(vec2( dot(p,vec2(127.5,313.7)),dot(p,vec2(239.5,185.3))))*43458.3453))\n\n#define flux(x) (vec3(cos(x),cos(4.0*PI/3.0+x),cos(2.0*PI/3.0+x))*.5+.5)\n#define rotatePoint(p,n,theta) (p*cos(theta)+cross(n,p)*sin(theta)+n*dot(p,n) *(1.0-cos(theta)))\n\n#define zero(x) (smoothstep(-1.0/PI/E/GR, 1.0/PI/E/GR, sin(x*PI/2.0))*2.0-1.0)\n#define absMin(x,y) (abs(x) < abs(y) ? x: y)\n#define quadrant(uv) (absMin((zero(uv).x), (zero(uv).y))+floor(uv.x/2.0)+floor(uv.y/2.0))\n\nfloat saw(float x)\n{\n    float f = mod(floor(abs(x)), 2.0);\n    float m = mod(abs(x), 1.0);\n    return f*(1.0-m)+(1.0-f)*m;\n}\nvec2 saw(vec2 x)\n{\n    return vec2(saw(x.x), saw(x.y));\n}\n\nvec3 saw(vec3 x)\n{\n    return vec3(saw(x.x), saw(x.y), saw(x.z));\n}\nvec4 saw(vec4 x)\n{\n    return vec4(saw(x.x), saw(x.y), saw(x.z), saw(x.w));\n}\n\n\n\nvoid main()\n{\n    vec2 uv = fragCoord.xy / iResolution.xy*2.-1.;\n    float start_point = 1.-smoothstep(0., .01, 1./3.-abs(uv.x));\n  \tfloat time_line = 1.-smoothstep(0., 10., saw(uv.x*time_window*3.)*iResolution.x/time_window);\n    fragColor = vec4(1.-time_line*start_point);\n  \tfragColor.a = 1.;\n}\n    \n\n  ",
-            "vertex": "precision highp float;\nprecision highp int;\n\n#define UNIFORM_INSERTION_POINT\n\nattribute highp vec4 vertex; \n\nvarying vec2 vPosition;\nvoid main(void) {\n    vPosition = vertex.xy;\n    gl_Position = vec4(vPosition*2.-1., 0., 1.);\n}\n"
+            "fragment": `
+            precision highp float;
+precision highp int;
+
+
+
+#define iResolution (vec2(width,height))
+#define fragCoord (vPosition*iResolution)
+#define fragColor (gl_FragColor)
+#define iTime time
+
+#define UNIFORM_INSERTION_POINT
+
+
+
+varying vec2 vPosition;
+
+
+//-----------------CONSTANTS MACROS-----------------
+
+#define PI 3.14159265359
+#define E 2.7182818284
+#define GR 1.61803398875
+#define MAX_DIM (max(iResolution.x,iResolution.y))
+
+//-----------------UTILITY MACROS-----------------
+
+#define sphereN(uv) (clamp(1.0-length(uv*2.0-1.0), 0.0, 1.0))
+#define clip(x) (smoothstep(0.25, .75, x))
+#define TIMES_DETAILED (1.0)
+#define angle(uv) (atan(uv.y, uv.x))
+#define angle_percent(uv) ((angle(uv)/PI+1.0)/2.0)
+#define hash(p) (fract(sin(vec2( dot(p,vec2(127.5,313.7)),dot(p,vec2(239.5,185.3))))*43458.3453))
+
+#define flux(x) (vec3(cos(x),cos(4.0*PI/3.0+x),cos(2.0*PI/3.0+x))*.5+.5)
+#define rotatePoint(p,n,theta) (p*cos(theta)+cross(n,p)*sin(theta)+n*dot(p,n) *(1.0-cos(theta)))
+
+#define zero(x) (smoothstep(-1.0/PI/E/GR, 1.0/PI/E/GR, sin(x*PI/2.0))*2.0-1.0)
+#define absMin(x,y) (abs(x) < abs(y) ? x: y)
+#define quadrant(uv) (absMin((zero(uv).x), (zero(uv).y))+floor(uv.x/2.0)+floor(uv.y/2.0))
+
+float saw(float x)
+{
+    float f = mod(floor(abs(x)), 2.0);
+    float m = mod(abs(x), 1.0);
+    return f*(1.0-m)+(1.0-f)*m;
+}
+vec2 saw(vec2 x)
+{
+    return vec2(saw(x.x), saw(x.y));
+}
+
+vec3 saw(vec3 x)
+{
+    return vec3(saw(x.x), saw(x.y), saw(x.z));
+}
+vec4 saw(vec4 x)
+{
+    return vec4(saw(x.x), saw(x.y), saw(x.z), saw(x.w));
+}
+
+
+
+void main()
+{
+    vec2 uv = fragCoord.xy / iResolution.xy*2.-1.;
+    float start_point = 1.-smoothstep(0., .01, 1./3.-abs(uv.x));
+  	float time_line = 1.-smoothstep(0., 10., saw(uv.x*time_window*3.)*iResolution.x/time_window);
+    fragColor = vec4(1.-time_line*start_point);
+  	fragColor.a = 1.;
+}
+`,
+            "vertex": `
+precision highp float;
+precision highp int;
+
+#define UNIFORM_INSERTION_POINT
+
+attribute highp vec4 vertex; 
+
+varying vec2 vPosition;
+void main(void) {
+    vPosition = vertex.xy;
+    gl_Position = vec4(vPosition*2.-1., 0., 1.);
+}
+            `
           },
           {
             "name": "graphs-program",
@@ -1708,36 +1723,117 @@ user-scalable=no">
               {
                 "type": "FLOAT",
                 "name": "width",
-                "value": "return pipeline.getContext('image-context').canvas.width;"
+                "value": () => { return pipeline.getContext('image-context').canvas.width; }
               },
               {
                 "type": "FLOAT",
                 "name": "height",
-                "value": "return pipeline.getContext('image-context').canvas.height;"
+                "value": () => { return pipeline.getContext('image-context').canvas.height; }
               },
               {
                 "type": "FLOAT",
                 "name": "time",
-                "value": "return window.get_time();"
+                "value": () => { return window.get_time(); }
               },
               {
                 "type": "VEC_TWO",
                 "name": "mouse_position",
-                "value": "return window.mouse_canvas_position;"
+                "value": () => { return window.mouse_canvas_position; }
               },
               {
                 "type": "FLOAT",
                 "name": "max_amount",
-                "value": "return window.last_max_amount"
+                "value": () => { return window.last_max_amount }
               },
               {
                 "type": "FLOAT",
                 "name": "y_scalar",
-                "value": "return window.y_scalar ? window.y_scalar : 1.;"
+                "value": () => { return window.y_scalar ? window.y_scalar : 1.; }
               }
             ],
-            "fragment": "\n#extension GL_OES_standard_derivatives : enable\nprecision highp float;\nprecision highp int;\n\n\n\n#define iResolution (vec2(width,height))\n#define fragCoord (vPosition*iResolution)\n#define fragColor (gl_FragColor)\n#define iTime time\n\n#define UNIFORM_INSERTION_POINT\n\n\n\nvarying vec2 vPosition;\nvarying highp vec2 uv;\n\n\n//-----------------CONSTANTS MACROS-----------------\n\n#define PI 3.14159265359\n#define E 2.7182818284\n#define GR 1.61803398875\n#define MAX_DIM (max(iResolution.x,iResolution.y))\n\n//-----------------UTILITY MACROS-----------------\n\n#define time ((sin(float(__LINE__))+2.0)*time)\n#define sphereN(uv) (clamp(1.0-length(uv*2.0-1.0), 0.0, 1.0))\n#define clip(x) (smoothstep(0.25, .75, x))\n#define TIMES_DETAILED (1.0)\n#define angle(uv) (atan(uv.y, uv.x))\n#define angle_percent(uv) ((angle(uv)/PI+1.0)/2.0)\n#define hash(p) (fract(sin(vec2( dot(p,vec2(127.5,313.7)),dot(p,vec2(239.5,185.3))))*43458.3453))\n\n#define flux(x) (vec3(cos(x),cos(4.0*PI/3.0+x),cos(2.0*PI/3.0+x))*.5+.5)\n#define rotatePoint(p,n,theta) (p*cos(theta)+cross(n,p)*sin(theta)+n*dot(p,n) *(1.0-cos(theta)))\n\n#define zero(x) (smoothstep(-1.0/PI/E/GR, 1.0/PI/E/GR, sin(x*PI/2.0))*2.0-1.0)\n#define absMin(x,y) (abs(x) < abs(y) ? x: y)\n#define quadrant(uv) (absMin((zero(uv).x), (zero(uv).y))+floor(uv.x/2.0)+floor(uv.y/2.0))\n\nfloat saw(float x)\n{\n    float f = mod(floor(abs(x)), 2.0);\n    float m = mod(abs(x), 1.0);\n    return f*(1.0-m)+(1.0-f)*m;\n}\nvec2 saw(vec2 x)\n{\n    return vec2(saw(x.x), saw(x.y));\n}\n\nvec3 saw(vec3 x)\n{\n    return vec3(saw(x.x), saw(x.y), saw(x.z));\n}\nvec4 saw(vec4 x)\n{\n    return vec4(saw(x.x), saw(x.y), saw(x.z), saw(x.w));\n}\n\n\n\nvoid main()\n{\n    fragColor = vec4(0.,0.,0., 1.)*(1.-smoothstep(0.,.1, saw(uv.y*uv.x*2.)));\n}\n    \n\n  ",
-            "vertex": "precision highp float;\nprecision highp int;\n\n#define UNIFORM_INSERTION_POINT\n\nattribute highp vec4 vertex; \nvarying highp vec2 uv;\nvarying vec2 vPosition;\n\nvoid main(void) {\n  \tuv = vertex.zw;\n    vPosition = vertex.xy;\n    gl_Position = vec4(vPosition*2.-1., 0., 1.);\n}\n"
+            "fragment": `
+            precision highp float;
+precision highp int;
+
+
+
+#define iResolution (vec2(width,height))
+#define fragCoord (vPosition*iResolution)
+#define fragColor (gl_FragColor)
+#define iTime time
+
+#define UNIFORM_INSERTION_POINT
+
+
+
+varying vec2 vPosition;
+varying highp vec2 uv;
+
+
+//-----------------CONSTANTS MACROS-----------------
+
+#define PI 3.14159265359
+#define E 2.7182818284
+#define GR 1.61803398875
+#define MAX_DIM (max(iResolution.x,iResolution.y))
+
+//-----------------UTILITY MACROS-----------------
+
+#define time ((sin(float(__LINE__))+2.0)*time)
+#define sphereN(uv) (clamp(1.0-length(uv*2.0-1.0), 0.0, 1.0))
+#define clip(x) (smoothstep(0.25, .75, x))
+#define TIMES_DETAILED (1.0)
+#define angle(uv) (atan(uv.y, uv.x))
+#define angle_percent(uv) ((angle(uv)/PI+1.0)/2.0)
+#define hash(p) (fract(sin(vec2( dot(p,vec2(127.5,313.7)),dot(p,vec2(239.5,185.3))))*43458.3453))
+
+#define flux(x) (vec3(cos(x),cos(4.0*PI/3.0+x),cos(2.0*PI/3.0+x))*.5+.5)
+#define rotatePoint(p,n,theta) (p*cos(theta)+cross(n,p)*sin(theta)+n*dot(p,n) *(1.0-cos(theta)))
+
+#define zero(x) (smoothstep(-1.0/PI/E/GR, 1.0/PI/E/GR, sin(x*PI/2.0))*2.0-1.0)
+#define absMin(x,y) (abs(x) < abs(y) ? x: y)
+#define quadrant(uv) (absMin((zero(uv).x), (zero(uv).y))+floor(uv.x/2.0)+floor(uv.y/2.0))
+
+float saw(float x)
+{
+    float f = mod(floor(abs(x)), 2.0);
+    float m = mod(abs(x), 1.0);
+    return f*(1.0-m)+(1.0-f)*m;
+}
+vec2 saw(vec2 x)
+{
+    return vec2(saw(x.x), saw(x.y));
+}
+
+vec3 saw(vec3 x)
+{
+    return vec3(saw(x.x), saw(x.y), saw(x.z));
+}
+vec4 saw(vec4 x)
+{
+    return vec4(saw(x.x), saw(x.y), saw(x.z), saw(x.w));
+}
+
+void main()
+{
+    fragColor = vec4(0.,0.,0., 1.)*(1.-smoothstep(0.,.1, saw(uv.y*uv.x*2.)));
+}`,
+            "vertex": `
+precision highp float;
+precision highp int;
+
+#define UNIFORM_INSERTION_POINT
+
+attribute highp vec4 vertex; 
+varying highp vec2 uv;
+varying vec2 vPosition;
+
+void main(void) {
+  	uv = vertex.zw;
+    vPosition = vertex.xy;
+    gl_Position = vec4(vPosition*2.-1., 0., 1.);
+}
+            `
           },
           {
             "name": "wealth-program",
@@ -1745,41 +1841,129 @@ user-scalable=no">
               {
                 "type": "FLOAT",
                 "name": "width",
-                "value": "return pipeline.getContext('image-context').canvas.width;"
+                "value": () => { return pipeline.getContext('image-context').canvas.width; }
               },
               {
                 "type": "FLOAT",
                 "name": "height",
-                "value": "return pipeline.getContext('image-context').canvas.height;"
+                "value": () => { return pipeline.getContext('image-context').canvas.height; }
               },
               {
                 "type": "FLOAT",
                 "name": "time",
-                "value": "return window.get_time();"
+                "value": () => { return window.get_time(); }
               },
               {
                 "type": "VEC_TWO",
                 "name": "mouse_position",
-                "value": "return window.mouse_canvas_position;"
+                "value": () => { return window.mouse_canvas_position; }
               },
               {
                 "type": "FLOAT",
                 "name": "max_amount",
-                "value": "return window.last_max_amount"
+                "value": () => { return window.last_max_amount }
               },
               {
                 "type": "FLOAT",
                 "name": "y_scalar",
-                "value": "return window.y_scalar ? window.y_scalar : 1.;"
+                "value": () => { return window.y_scalar ? window.y_scalar : 1.; }
               },
               {
                 "type": "FLOAT",
                 "name": "time_window",
-                "value": "return window.time_window;"
+                "value": () => { return window.time_window; }
               }
             ],
-            "fragment": "\n#extension GL_OES_standard_derivatives : enable\nprecision highp float;\nprecision highp int;\n\n\n\n#define iResolution (vec2(width,height))\n#define fragCoord (vPosition*iResolution)\n#define fragColor (gl_FragColor)\n#define iTime time\n\n#define UNIFORM_INSERTION_POINT\n\n\n\nvarying vec2 vPosition;\nvarying highp float weight;\nvarying highp float y_pos;\n\n\n//-----------------CONSTANTS MACROS-----------------\n\n#define PI 3.14159265359\n#define E 2.7182818284\n#define GR 1.61803398875\n#define MAX_DIM (max(iResolution.x,iResolution.y))\n\n//-----------------UTILITY MACROS-----------------\n\n#define time ((sin(float(__LINE__))+2.0)*time)\n#define sphereN(uv) (clamp(1.0-length(uv*2.0-1.0), 0.0, 1.0))\n#define clip(x) (smoothstep(0.25, .75, x))\n#define TIMES_DETAILED (1.0)\n#define angle(uv) (atan(uv.y, uv.x))\n#define angle_percent(uv) ((angle(uv)/PI+1.0)/2.0)\n#define hash(p) (fract(sin(vec2( dot(p,vec2(127.5,313.7)),dot(p,vec2(239.5,185.3))))*43458.3453))\n\n#define flux(x) (vec3(cos(x),cos(4.0*PI/3.0+x),cos(2.0*PI/3.0+x))*.5+.5)\n#define rotatePoint(p,n,theta) (p*cos(theta)+cross(n,p)*sin(theta)+n*dot(p,n) *(1.0-cos(theta)))\n\n#define zero(x) (smoothstep(-1.0/PI/E/GR, 1.0/PI/E/GR, sin(x*PI/2.0))*2.0-1.0)\n#define absMin(x,y) (abs(x) < abs(y) ? x: y)\n#define quadrant(uv) (absMin((zero(uv).x), (zero(uv).y))+floor(uv.x/2.0)+floor(uv.y/2.0))\n\nfloat saw(float x)\n{\n    float f = mod(floor(abs(x)), 2.0);\n    float m = mod(abs(x), 1.0);\n    return f*(1.0-m)+(1.0-f)*m;\n}\nvec2 saw(vec2 x)\n{\n    return vec2(saw(x.x), saw(x.y));\n}\n\nvec3 saw(vec3 x)\n{\n    return vec3(saw(x.x), saw(x.y), saw(x.z));\n}\nvec4 saw(vec4 x)\n{\n    return vec4(saw(x.x), saw(x.y), saw(x.z), saw(x.w));\n}\n\n\n\nvoid main()\n{\n    fragColor.rgb = flux((weight/max_amount*.5+.5)*PI).rbg;//vec3(weight)*min(max(mod(weight-time+vPosition.x, 3.)-1., 0.), 1.);//vec3(flux(weight*PI).rbg);//+vPosition.x*PI));\n  \n    fragColor.a = 1.;\n}\n    \n\n  ",
-            "vertex": "precision highp float;\nprecision highp int;\n\n#define UNIFORM_INSERTION_POINT\n\nattribute highp vec4 vertex; \nvarying highp float weight;\nvarying highp float y_pos;\nvarying vec2 vPosition;\n\nvoid main(void) {\n  \tweight = vertex.z;\n  \ty_pos = vertex.w;\n    vPosition = vertex.xy;\n    gl_Position = vec4(vPosition*2.-1., 0., 1.);\n}\n"
+            "fragment": `
+precision highp float;
+precision highp int;
+
+
+
+#define iResolution (vec2(width,height))
+#define fragCoord (vPosition*iResolution)
+#define fragColor (gl_FragColor)
+#define iTime time
+
+#define UNIFORM_INSERTION_POINT
+
+
+
+varying vec2 vPosition;
+varying highp float weight;
+varying highp float y_pos;
+
+
+//-----------------CONSTANTS MACROS-----------------
+
+#define PI 3.14159265359
+#define E 2.7182818284
+#define GR 1.61803398875
+#define MAX_DIM (max(iResolution.x,iResolution.y))
+
+//-----------------UTILITY MACROS-----------------
+
+#define time ((sin(float(__LINE__))+2.0)*time)
+#define sphereN(uv) (clamp(1.0-length(uv*2.0-1.0), 0.0, 1.0))
+#define clip(x) (smoothstep(0.25, .75, x))
+#define TIMES_DETAILED (1.0)
+#define angle(uv) (atan(uv.y, uv.x))
+#define angle_percent(uv) ((angle(uv)/PI+1.0)/2.0)
+#define hash(p) (fract(sin(vec2( dot(p,vec2(127.5,313.7)),dot(p,vec2(239.5,185.3))))*43458.3453))
+
+#define flux(x) (vec3(cos(x),cos(4.0*PI/3.0+x),cos(2.0*PI/3.0+x))*.5+.5)
+#define rotatePoint(p,n,theta) (p*cos(theta)+cross(n,p)*sin(theta)+n*dot(p,n) *(1.0-cos(theta)))
+
+#define zero(x) (smoothstep(-1.0/PI/E/GR, 1.0/PI/E/GR, sin(x*PI/2.0))*2.0-1.0)
+#define absMin(x,y) (abs(x) < abs(y) ? x: y)
+#define quadrant(uv) (absMin((zero(uv).x), (zero(uv).y))+floor(uv.x/2.0)+floor(uv.y/2.0))
+
+float saw(float x)
+{
+    float f = mod(floor(abs(x)), 2.0);
+    float m = mod(abs(x), 1.0);
+    return f*(1.0-m)+(1.0-f)*m;
+}
+vec2 saw(vec2 x)
+{
+    return vec2(saw(x.x), saw(x.y));
+}
+
+vec3 saw(vec3 x)
+{
+    return vec3(saw(x.x), saw(x.y), saw(x.z));
+}
+vec4 saw(vec4 x)
+{
+    return vec4(saw(x.x), saw(x.y), saw(x.z), saw(x.w));
+}
+
+
+
+void main()
+{
+    fragColor.rgb = flux((weight/max_amount*.5+.5)*PI).rbg;//vec3(weight)*min(max(mod(weight-time+vPosition.x, 3.)-1., 0.), 1.);//vec3(flux(weight*PI).rbg);//+vPosition.x*PI));
+  
+    fragColor.a = 1.;
+}`,
+            "vertex": `
+precision highp float;
+precision highp int;
+
+#define UNIFORM_INSERTION_POINT
+
+attribute highp vec4 vertex; 
+varying highp float weight;
+varying highp float y_pos;
+varying vec2 vPosition;
+
+void main(void) {
+  	weight = vertex.z;
+  	y_pos = vertex.w;
+    vPosition = vertex.xy;
+    gl_Position = vec4(vPosition*2.-1., 0., 1.);
+}
+            `
           },
           {
             "name": "payments-program",
@@ -1787,41 +1971,131 @@ user-scalable=no">
               {
                 "type": "FLOAT",
                 "name": "width",
-                "value": "return pipeline.getContext('image-context').canvas.width;"
+                "value": () => { return pipeline.getContext('image-context').canvas.width; }
               },
               {
                 "type": "FLOAT",
                 "name": "height",
-                "value": "return pipeline.getContext('image-context').canvas.height;"
+                "value": () => { return pipeline.getContext('image-context').canvas.height; }
               },
               {
                 "type": "FLOAT",
                 "name": "time",
-                "value": "return window.get_time();"
+                "value": () => { return window.get_time(); }
               },
               {
                 "type": "VEC_TWO",
                 "name": "mouse_position",
-                "value": "return window.mouse_canvas_position;"
+                "value": () => { return window.mouse_canvas_position; }
               },
               {
                 "type": "FLOAT",
                 "name": "max_amount",
-                "value": "return window.last_max_amount"
+                "value": () => { return window.last_max_amount }
               },
               {
                 "type": "FLOAT",
                 "name": "y_scalar",
-                "value": "return window.y_scalar ? window.y_scalar : 1.;"
+                "value": () => { return window.y_scalar ? window.y_scalar : 1.; }
               },
               {
                 "type": "FLOAT",
                 "name": "time_window",
-                "value": "return window.time_window;"
+                "value": () => { return window.time_window; }
               }
             ],
-            "fragment": "\n#extension GL_OES_standard_derivatives : enable\nprecision highp float;\nprecision highp int;\n\n\n\n#define iResolution (vec2(width,height))\n#define fragCoord (vPosition*iResolution)\n#define fragColor (gl_FragColor)\n#define iTime time\n\n#define UNIFORM_INSERTION_POINT\n\n\n\nvarying vec2 vPosition;\nvarying highp float weight;\nvarying highp float y_pos;\n\n\n//-----------------CONSTANTS MACROS-----------------\n\n#define PI 3.14159265359\n#define E 2.7182818284\n#define GR 1.61803398875\n#define MAX_DIM (max(iResolution.x,iResolution.y))\n\n//-----------------UTILITY MACROS-----------------\n\n#define time ((sin(float(__LINE__))+2.0)*time)\n#define sphereN(uv) (clamp(1.0-length(uv*2.0-1.0), 0.0, 1.0))\n#define clip(x) (smoothstep(0.25, .75, x))\n#define TIMES_DETAILED (1.0)\n#define angle(uv) (atan(uv.y, uv.x))\n#define angle_percent(uv) ((angle(uv)/PI+1.0)/2.0)\n#define hash(p) (fract(sin(vec2( dot(p,vec2(127.5,313.7)),dot(p,vec2(239.5,185.3))))*43458.3453))\n\n#define flux(x) (vec3(cos(x),cos(4.0*PI/3.0+x),cos(2.0*PI/3.0+x))*.5+.5)\n#define rotatePoint(p,n,theta) (p*cos(theta)+cross(n,p)*sin(theta)+n*dot(p,n) *(1.0-cos(theta)))\n\n#define zero(x) (smoothstep(-1.0/PI/E/GR, 1.0/PI/E/GR, sin(x*PI/2.0))*2.0-1.0)\n#define absMin(x,y) (abs(x) < abs(y) ? x: y)\n#define quadrant(uv) (absMin((zero(uv).x), (zero(uv).y))+floor(uv.x/2.0)+floor(uv.y/2.0))\n\nfloat saw(float x)\n{\n    float f = mod(floor(abs(x)), 2.0);\n    float m = mod(abs(x), 1.0);\n    return f*(1.0-m)+(1.0-f)*m;\n}\nvec2 saw(vec2 x)\n{\n    return vec2(saw(x.x), saw(x.y));\n}\n\nvec3 saw(vec3 x)\n{\n    return vec3(saw(x.x), saw(x.y), saw(x.z));\n}\nvec4 saw(vec4 x)\n{\n    return vec4(saw(x.x), saw(x.y), saw(x.z), saw(x.w));\n}\n\n\n\nvoid main()\n{\n    fragColor.rgb = flux(weight/max_amount*PI*1.5).rbg;//vec3(weight)*min(max(mod(weight-time+vPosition.x, 3.)-1., 0.), 1.);//vec3(flux(weight*PI).rbg);//+vPosition.x*PI));\n  \n  \tfloat black_line = smoothstep(0., .1/max_amount, saw(y_pos*2.));\n  \tfragColor.rgb = min(fragColor.rgb, vec3(black_line));\n    fragColor.a = .5+.5*saw(black_line*2.);\n}\n    \n\n  ",
-            "vertex": "precision highp float;\nprecision highp int;\n\n#define UNIFORM_INSERTION_POINT\n\nattribute highp vec4 vertex; \nvarying highp float weight;\nvarying highp float y_pos;\nvarying vec2 vPosition;\n\nvoid main(void) {\n  \tweight = vertex.z;\n  \ty_pos = vertex.w;\n    vPosition = vertex.xy;\n    gl_Position = vec4(vPosition*2.-1., 0., 1.);\n}\n"
+            "fragment": `
+precision highp float;
+precision highp int;
+
+
+
+#define iResolution (vec2(width,height))
+#define fragCoord (vPosition*iResolution)
+#define fragColor (gl_FragColor)
+#define iTime time
+
+#define UNIFORM_INSERTION_POINT
+
+
+
+varying vec2 vPosition;
+varying highp float weight;
+varying highp float y_pos;
+
+
+//-----------------CONSTANTS MACROS-----------------
+
+#define PI 3.14159265359
+#define E 2.7182818284
+#define GR 1.61803398875
+#define MAX_DIM (max(iResolution.x,iResolution.y))
+
+//-----------------UTILITY MACROS-----------------
+
+#define time ((sin(float(__LINE__))+2.0)*time)
+#define sphereN(uv) (clamp(1.0-length(uv*2.0-1.0), 0.0, 1.0))
+#define clip(x) (smoothstep(0.25, .75, x))
+#define TIMES_DETAILED (1.0)
+#define angle(uv) (atan(uv.y, uv.x))
+#define angle_percent(uv) ((angle(uv)/PI+1.0)/2.0)
+#define hash(p) (fract(sin(vec2( dot(p,vec2(127.5,313.7)),dot(p,vec2(239.5,185.3))))*43458.3453))
+
+#define flux(x) (vec3(cos(x),cos(4.0*PI/3.0+x),cos(2.0*PI/3.0+x))*.5+.5)
+#define rotatePoint(p,n,theta) (p*cos(theta)+cross(n,p)*sin(theta)+n*dot(p,n) *(1.0-cos(theta)))
+
+#define zero(x) (smoothstep(-1.0/PI/E/GR, 1.0/PI/E/GR, sin(x*PI/2.0))*2.0-1.0)
+#define absMin(x,y) (abs(x) < abs(y) ? x: y)
+#define quadrant(uv) (absMin((zero(uv).x), (zero(uv).y))+floor(uv.x/2.0)+floor(uv.y/2.0))
+
+float saw(float x)
+{
+    float f = mod(floor(abs(x)), 2.0);
+    float m = mod(abs(x), 1.0);
+    return f*(1.0-m)+(1.0-f)*m;
+}
+vec2 saw(vec2 x)
+{
+    return vec2(saw(x.x), saw(x.y));
+}
+
+vec3 saw(vec3 x)
+{
+    return vec3(saw(x.x), saw(x.y), saw(x.z));
+}
+vec4 saw(vec4 x)
+{
+    return vec4(saw(x.x), saw(x.y), saw(x.z), saw(x.w));
+}
+
+
+
+void main()
+{
+    fragColor.rgb = flux(weight/max_amount*PI*1.5).rbg;//vec3(weight)*min(max(mod(weight-time+vPosition.x, 3.)-1., 0.), 1.);//vec3(flux(weight*PI).rbg);//+vPosition.x*PI));
+  
+  	float black_line = smoothstep(0., .1/max_amount, saw(y_pos*2.));
+  	fragColor.rgb = min(fragColor.rgb, vec3(black_line));
+    fragColor.a = .5+.5*saw(black_line*2.);
+}`,
+            "vertex": `
+precision highp float;
+precision highp int;
+
+#define UNIFORM_INSERTION_POINT
+
+attribute highp vec4 vertex; 
+varying highp float weight;
+varying highp float y_pos;
+varying vec2 vPosition;
+
+void main(void) {
+  	weight = vertex.z;
+  	y_pos = vertex.w;
+    vPosition = vertex.xy;
+    gl_Position = vec4(vPosition*2.-1., 0., 1.);
+}
+            `
           },
           {
             "name": "overlay-program",
@@ -1829,36 +2103,119 @@ user-scalable=no">
               {
                 "type": "FLOAT",
                 "name": "width",
-                "value": "return pipeline.getContext('image-context').canvas.width;"
+                "value": () => { return pipeline.getContext('image-context').canvas.width; }
               },
               {
                 "type": "FLOAT",
                 "name": "height",
-                "value": "return pipeline.getContext('image-context').canvas.height;"
+                "value": () => { return pipeline.getContext('image-context').canvas.height; }
               },
               {
                 "type": "FLOAT",
                 "name": "time",
-                "value": "return window.get_time();"
+                "value": () => { return window.get_time(); }
               },
               {
                 "type": "FLOAT",
                 "name": "y_scalar",
-                "value": "return window.y_scalar ? window.y_scalar : 1.;"
+                "value": () => { return window.y_scalar ? window.y_scalar : 1.; }
               },
               {
                 "type": "FLOAT",
                 "name": "time_window",
-                "value": "return window.time_window;"
+                "value": () => { return window.time_window; }
               },
               {
                 "type": "VEC_TWO",
                 "name": "mouse_position",
-                "value": "return window.mouse_canvas_position"
+                "value": () => { return window.mouse_canvas_position }
               }
             ],
-            "fragment": "\n#extension GL_OES_standard_derivatives : enable\nprecision highp float;\nprecision highp int;\n\n\n\n#define iResolution (vec2(width,height))\n#define fragCoord (vPosition*iResolution)\n#define fragColor (gl_FragColor)\n#define iTime time\n\n#define UNIFORM_INSERTION_POINT\n\n\n\nvarying vec2 vPosition;\n\n\n//-----------------CONSTANTS MACROS-----------------\n\n#define PI 3.14159265359\n#define E 2.7182818284\n#define GR 1.61803398875\n#define MAX_DIM (max(iResolution.x,iResolution.y))\n\n//-----------------UTILITY MACROS-----------------\n\n#define sphereN(uv) (clamp(1.0-length(uv*2.0-1.0), 0.0, 1.0))\n#define clip(x) (smoothstep(0.25, .75, x))\n#define TIMES_DETAILED (1.0)\n#define angle(uv) (atan(uv.y, uv.x))\n#define angle_percent(uv) ((angle(uv)/PI+1.0)/2.0)\n#define hash(p) (fract(sin(vec2( dot(p,vec2(127.5,313.7)),dot(p,vec2(239.5,185.3))))*43458.3453))\n\n#define flux(x) (vec3(cos(x),cos(4.0*PI/3.0+x),cos(2.0*PI/3.0+x))*.5+.5)\n#define rotatePoint(p,n,theta) (p*cos(theta)+cross(n,p)*sin(theta)+n*dot(p,n) *(1.0-cos(theta)))\n\n#define zero(x) (smoothstep(-1.0/PI/E/GR, 1.0/PI/E/GR, sin(x*PI/2.0))*2.0-1.0)\n#define absMin(x,y) (abs(x) < abs(y) ? x: y)\n#define quadrant(uv) (absMin((zero(uv).x), (zero(uv).y))+floor(uv.x/2.0)+floor(uv.y/2.0))\n\nfloat saw(float x)\n{\n    float f = mod(floor(abs(x)), 2.0);\n    float m = mod(abs(x), 1.0);\n    return f*(1.0-m)+(1.0-f)*m;\n}\nvec2 saw(vec2 x)\n{\n    return vec2(saw(x.x), saw(x.y));\n}\n\nvec3 saw(vec3 x)\n{\n    return vec3(saw(x.x), saw(x.y), saw(x.z));\n}\nvec4 saw(vec4 x)\n{\n    return vec4(saw(x.x), saw(x.y), saw(x.z), saw(x.w));\n}\n\n\n\nvoid main()\n{\n    vec2 uv = fragCoord.xy / iResolution.xy*2.-1.;\n    float start_point = 1.-smoothstep(0., .01, 1./3.-abs(uv.x));\n  \tfloat time_line = 1.-smoothstep(0., 1./90., saw(abs(uv.x*3.*sign(uv.x)-1.+time/time_window*3.*2./3.)));\n  \tfloat flash =1.;\n    fragColor = GR*vec4(flash,flash, flash, 2.)*time_line*start_point*vec4(vec3(smoothstep(.49, .51, (sin(uv.y*y_scalar*PI/2.))*.5+.5)), 1.);\n  \tfragColor.rgb += vec3(1.-smoothstep(0., .01, length(uv-(mouse_position*2.-1.))));\n}\n    \n\n  ",
-            "vertex": "precision highp float;\nprecision highp int;\n\n#define UNIFORM_INSERTION_POINT\n\nattribute highp vec4 vertex; \n\nvarying vec2 vPosition;\nvoid main(void) {\n    vPosition = vertex.xy;\n    gl_Position = vec4(vPosition*2.-1., 0., 1.);\n}\n"
+            "fragment": `
+precision highp float;
+precision highp int;
+
+
+
+#define iResolution (vec2(width,height))
+#define fragCoord (vPosition*iResolution)
+#define fragColor (gl_FragColor)
+#define iTime time
+
+#define UNIFORM_INSERTION_POINT
+
+
+
+varying vec2 vPosition;
+
+
+//-----------------CONSTANTS MACROS-----------------
+
+#define PI 3.14159265359
+#define E 2.7182818284
+#define GR 1.61803398875
+#define MAX_DIM (max(iResolution.x,iResolution.y))
+
+//-----------------UTILITY MACROS-----------------
+
+#define sphereN(uv) (clamp(1.0-length(uv*2.0-1.0), 0.0, 1.0))
+#define clip(x) (smoothstep(0.25, .75, x))
+#define TIMES_DETAILED (1.0)
+#define angle(uv) (atan(uv.y, uv.x))
+#define angle_percent(uv) ((angle(uv)/PI+1.0)/2.0)
+#define hash(p) (fract(sin(vec2( dot(p,vec2(127.5,313.7)),dot(p,vec2(239.5,185.3))))*43458.3453))
+
+#define flux(x) (vec3(cos(x),cos(4.0*PI/3.0+x),cos(2.0*PI/3.0+x))*.5+.5)
+#define rotatePoint(p,n,theta) (p*cos(theta)+cross(n,p)*sin(theta)+n*dot(p,n) *(1.0-cos(theta)))
+
+#define zero(x) (smoothstep(-1.0/PI/E/GR, 1.0/PI/E/GR, sin(x*PI/2.0))*2.0-1.0)
+#define absMin(x,y) (abs(x) < abs(y) ? x: y)
+#define quadrant(uv) (absMin((zero(uv).x), (zero(uv).y))+floor(uv.x/2.0)+floor(uv.y/2.0))
+
+float saw(float x)
+{
+    float f = mod(floor(abs(x)), 2.0);
+    float m = mod(abs(x), 1.0);
+    return f*(1.0-m)+(1.0-f)*m;
+}
+vec2 saw(vec2 x)
+{
+    return vec2(saw(x.x), saw(x.y));
+}
+
+vec3 saw(vec3 x)
+{
+    return vec3(saw(x.x), saw(x.y), saw(x.z));
+}
+vec4 saw(vec4 x)
+{
+    return vec4(saw(x.x), saw(x.y), saw(x.z), saw(x.w));
+}
+
+
+
+void main()
+{
+    vec2 uv = fragCoord.xy / iResolution.xy*2.-1.;
+    float start_point = 1.-smoothstep(0., .01, 1./3.-abs(uv.x));
+  	float time_line = 1.-smoothstep(0., 1./90., saw(abs(uv.x*3.*sign(uv.x)-1.+time/time_window*3.*2./3.)));
+  	float flash =1.;
+    fragColor = GR*vec4(flash,flash, flash, 2.)*time_line*start_point*vec4(vec3(smoothstep(.49, .51, (sin(uv.y*y_scalar*PI/2.))*.5+.5)), 1.);
+  	fragColor.rgb += vec3(1.-smoothstep(0., .01, length(uv-(mouse_position*2.-1.))));
+}`,
+            "vertex": `
+precision highp float;
+precision highp int;
+
+#define UNIFORM_INSERTION_POINT
+
+attribute highp vec4 vertex; 
+
+varying vec2 vPosition;
+void main(void) {
+    vPosition = vertex.xy;
+    gl_Position = vec4(vPosition*2.-1., 0., 1.);
+}`
           }
         ],
         "stages": [
@@ -1867,40 +2224,101 @@ user-scalable=no">
             "type": "MESH_TRIANGLES",
             "context": "image-context",
             "program": "background-program",
-            "vertices": "var gl = pipeline.getContext('image-context').gl\ngl.clear(gl.COLOR_BUFFER_BIT);\ngl.disable(gl.BLEND);\nreturn  [[\n  0, 0, 0.0, 1.,\n  1, 0, 0.0, 1.,\n  1, 1, 0.0, 1.,\n  0, 1, 0.0, 1.\n]];",
-            "indices": "return [\n  0, 1, 2, 0, 2, 3// Front face\n];"
+            "vertices": () => {
+              var gl = pipeline.getContext('image-context').gl
+              gl.clear(gl.COLOR_BUFFER_BIT);
+              gl.disable(gl.BLEND);
+              return [[
+                0, 0, 0.0, 1.,
+                1, 0, 0.0, 1.,
+                1, 1, 0.0, 1.,
+                0, 1, 0.0, 1.
+              ]];
+            },
+            "indices": () => {
+              return [
+                0, 1, 2, 0, 2, 3// Front face
+              ];
+            }
           },
           {
             "name": "payments-stage",
             "type": "MESH_TRIANGLES",
             "context": "image-context",
             "program": "payments-program",
-            "vertices": "var gl = pipeline.getContext('image-context').gl\ngl.disable(gl.DEPTH_TEST);\ngl.enable(gl.BLEND);gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)\n\n\n\nreturn [window.final_payment_trapezoids.flat()]",
-            "indices": "var indices = []\nvar vertices = window.final_payment_trapezoids.flat();\nfor(var i = 0; i < vertices.length/4; i++)\n  indices.push(i);\nreturn indices"
+            "vertices": () => {
+              var gl = pipeline.getContext('image-context').gl
+              gl.disable(gl.DEPTH_TEST);
+              gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+              return [window.final_payment_trapezoids.flat()]
+            },
+            "indices": () => {
+              var indices = []
+              var vertices = window.final_payment_trapezoids.flat();
+              for (var i = 0; i < vertices.length / 4; i++)
+                indices.push(i);
+              return indices
+            }
           },
           {
             "name": "wealth-stage",
             "type": "MESH_TRIANGLES",
             "context": "image-context",
             "program": "wealth-program",
-            "vertices": "var gl = pipeline.getContext('image-context').gl\ngl.disable(gl.DEPTH_TEST);\ngl.disable(gl.BLEND);\nreturn [window.final_wealth_trapezoids.flat()]\n",
-            "indices": "var indices = []\nvar vertices = window.final_wealth_trapezoids.flat();\nfor(var i = 0; i < vertices.length/4; i++)\n  indices.push(i);\nreturn indices"
+            "vertices": () => {
+              var gl = pipeline.getContext('image-context').gl
+              gl.disable(gl.DEPTH_TEST);
+              gl.disable(gl.BLEND);
+              return [window.final_wealth_trapezoids.flat()]
+            },
+            "indices": () => {
+              var indices = []
+              var vertices = window.final_wealth_trapezoids.flat();
+              for (var i = 0; i < vertices.length / 4; i++)
+                indices.push(i);
+              return indices
+            }
           },
           {
             "name": "graphs-stage",
             "type": "MESH_TRIANGLES",
             "context": "image-context",
             "program": "graphs-program",
-            "vertices": "var gl = pipeline.getContext('image-context').gl\ngl.enable(gl.BLEND);\ngl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)\nreturn [window.final_graphs_trapezoids.flat()]",
-            "indices": "var indices = []\nvar vertices = window.final_graphs_trapezoids.flat();\nfor(var i = 0; i < vertices.length/4; i++)\n  indices.push(i);\nreturn indices"
+            "vertices": () => {
+              var gl = pipeline.getContext('image-context').gl
+              gl.enable(gl.BLEND);
+              gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+              return [window.final_graphs_trapezoids.flat()]
+            },
+            "indices": () => {
+              var indices = []
+              var vertices = window.final_graphs_trapezoids.flat();
+              for (var i = 0; i < vertices.length / 4; i++)
+                indices.push(i);
+              return indices
+            }
           },
           {
             "name": "overlay-stage",
             "type": "MESH_TRIANGLES",
             "context": "image-context",
             "program": "overlay-program",
-            "vertices": "var gl = pipeline.getContext('image-context').gl\ngl.enable(gl.BLEND);\ngl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)\nreturn  [[\n  0, 0, 0.0, 1.,\n  1, 0, 0.0, 1.,\n  1, 1, 0.0, 1.,\n  0, 1, 0.0, 1.\n]];",
-            "indices": "return [\n  0, 1, 2, 0, 2, 3// Front face\n];"
+            "vertices": () => {
+              var gl = pipeline.getContext('image-context').gl
+              gl.enable(gl.BLEND);
+              gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+              return [[
+                0, 0, 0.0, 1.,
+                1, 0, 0.0, 1.,
+                1, 1, 0.0, 1.,
+                0, 1, 0.0, 1.
+              ]];
+            },
+            "indices": () => {
+              return [
+                0, 1, 2, 0, 2, 3// Front face
+              ];
+            }
           }
         ]
       },
@@ -1909,7 +2327,7 @@ user-scalable=no">
     window.userAlgorithm = window.algorithm
 
     var minCome = 0.0
-    
+
     window.time_window = 30.;
     window.uniform_start_time = ((new Date()).getTime()) / 1E3;
     window.when_group_created = window.uniform_start_time;
@@ -1934,14 +2352,14 @@ user-scalable=no">
     function toggle_pause() {
       if (!window.paused) {
         window.pause_start_time = new Date().getTime() / 1E3
-        document.getElementById("play_button").style.display='inline-block';
-        document.getElementById("pause_button").style.display='hidden';
+        document.getElementById("play_button").style.display = 'inline-block';
+        document.getElementById("pause_button").style.display = 'hidden';
       }
       else {
         window.uniform_start_time += new Date().getTime() / 1E3 - window.pause_start_time
         window.show_option("");
-        document.getElementById("play_button").style.display='hidden';
-        document.getElementById("pause_button").style.display='inline-block';
+        document.getElementById("play_button").style.display = 'hidden';
+        document.getElementById("pause_button").style.display = 'inline-block';
       }
       window.paused = !window.paused;
     }
@@ -2001,7 +2419,7 @@ user-scalable=no">
     function user_leave_event(user_name, when = window.get_time()) {
       window.event_list.push({ type: EVENT_TYPES.LEAVE, name: user_name, when })
       window.event_list = window.event_list.sort((a, b) => a.when - b.when)
-      document.getElementById('options_div').style.display='hidden'
+      document.getElementById('options_div').style.display = 'hidden'
     }
 
     function user_pay_event(from, to, amount, when = window.get_time()) {
@@ -2011,7 +2429,7 @@ user-scalable=no">
     function user_change_income_event(user_name, income_or_expenses, when = window.get_time()) {
       window.event_list.push({ type: EVENT_TYPES.CHANGE_INCOME, name: user_name, income: income_or_expenses, when })
       window.event_list = window.event_list.sort((a, b) => a.when - b.when)
-      document.getElementById('options_div').style.display='hidden'
+      document.getElementById('options_div').style.display = 'hidden'
 
     }
     function group_change_income_event(new_mincome, when = window.get_time()) {
@@ -2022,8 +2440,10 @@ user-scalable=no">
       if (event) {
         return;
       }
-      window.event_list.push({ type: EVENT_TYPES.MONTHLY_BALANCE,
-        when: for_month * time_window, pledgers: window.pledgers, receivers: window.receivers })
+      window.event_list.push({
+        type: EVENT_TYPES.MONTHLY_BALANCE,
+        when: for_month * time_window, pledgers: window.pledgers, receivers: window.receivers
+      })
       window.event_list = window.event_list.sort((a, b) => a.when - b.when)
     }
 
@@ -2045,15 +2465,17 @@ user-scalable=no">
 
     function get_distribution(pledgers, receivers) {
       return adjustedDistribution({
-        distribution: unadjustedDistribution({haveNeeds: [
-          pledgers, 
-          receivers.map(r=>{
-            var s = cloneDeep(r);
-            s.haveNeed *= -1.;
-            return s;
-          })].flat(),
-          minimize:true
-        }), payments: window.current_monthly_payments, dueOn: 0});
+        distribution: unadjustedDistribution({
+          haveNeeds: [
+            pledgers,
+            receivers.map(r => {
+              var s = cloneDeep(r);
+              s.haveNeed *= -1.;
+              return s;
+            })].flat(),
+          minimize: true
+        }), payments: window.current_monthly_payments, dueOn: 0
+      });
     }
 
     function add_pledger() {
@@ -2084,7 +2506,7 @@ user-scalable=no">
 
     window.mouse_page_position = [0, 0]
     window.mouse_canvas_position = [0, 0]
-    
+
     window.last_graphs_trapezoids = [[], []]
     window.last_wealth_trapezoids = [[], []]
     window.last_payment_trapezoids = [[], [], [], []]
@@ -2164,7 +2586,7 @@ user-scalable=no">
       totalNeed = all_receiver_heights().reduce((a, b) => a + max_height(b), 0)
       max_wealth = Math.max(totalHave, totalNeed)
       spacer_scalar = 1.1;
-      max_transferable = max_wealth*spacer_scalar
+      max_transferable = max_wealth * spacer_scalar
 
       window.y_scalar = max_transferable;
 
@@ -2176,7 +2598,7 @@ user-scalable=no">
 
       label_html = [];
       label_positions = [];
-      
+
       current_receive = 0
 
       window.receivers = window.receivers.map((a) => { a.monthly_aggregation = 0; a.monthly_aggregation_start = 0; a.monthly_aggregation_end = 0; return a; })
@@ -2284,7 +2706,7 @@ user-scalable=no">
           pledger_or_receiver.money_heights.push([pledger_or_receiver.time_variable, pledger_or_receiver.income_integral])
         }
         else if (event.type == EVENT_TYPES.MONTHLY_BALANCE) {
-          window.pledgers = JSON.parse(JSON.stringify(event.pledgers)).map((v) => { 
+          window.pledgers = JSON.parse(JSON.stringify(event.pledgers)).map((v) => {
             v.time_variable = event.when;
             v.monthly_aggregation = 0;
             v.monthly_aggregation_start = 0;
@@ -2308,18 +2730,18 @@ user-scalable=no">
       }
       for (var i = 0; i < window.pledgers.length; i++) {
         var money_heights = window.pledgers[i].money_heights
-          var time_difference = (1. - (window.pledgers[i].time_variable / time_window) % 1.)
-          window.pledgers[i].time_variable += time_difference * time_window
-          // window.pledgers[i].income_integral = window.pledgers[i].last_income
-          money_heights.push([window.pledgers[i].time_variable, window.pledgers[i].income_integral])
-          window.pledgers[i].money_heights = money_heights
+        var time_difference = (1. - (window.pledgers[i].time_variable / time_window) % 1.)
+        window.pledgers[i].time_variable += time_difference * time_window
+        // window.pledgers[i].income_integral = window.pledgers[i].last_income
+        money_heights.push([window.pledgers[i].time_variable, window.pledgers[i].income_integral])
+        window.pledgers[i].money_heights = money_heights
       }
       for (var i = 0; i < window.receivers.length; i++) {
         var money_heights = window.receivers[i].money_heights
-          var time_difference = (1. - (window.receivers[i].time_variable / time_window) % 1.)
-          window.receivers[i].time_variable += time_difference * time_window
-          // window.receivers[i].income_integral = window.receivers[i].last_income
-          money_heights.push([window.receivers[i].time_variable, window.receivers[i].income_integral])
+        var time_difference = (1. - (window.receivers[i].time_variable / time_window) % 1.)
+        window.receivers[i].time_variable += time_difference * time_window
+        // window.receivers[i].income_integral = window.receivers[i].last_income
+        money_heights.push([window.receivers[i].time_variable, window.receivers[i].income_integral])
         window.receivers[i].money_heights = money_heights
       }
     }
@@ -2390,7 +2812,7 @@ user-scalable=no">
         //current_pledge -= min_wealth / max_transferable;
         pledger.monthly_aggregation_start = (current_pledge);
         pledger.monthly_aggregation = (current_pledge);
-        for (var j = 0; j < Math.floor(money_heights.length) - 1; j+= 2) {
+        for (var j = 0; j < Math.floor(money_heights.length) - 1; j += 2) {
           var from_time = money_heights[j][0] / time_window - Math.floor(get_time() / time_window)
           var to_time = money_heights[j + 1][0] / time_window - Math.floor(get_time() / time_window)
 
@@ -2458,8 +2880,8 @@ user-scalable=no">
           pledger.trapezoids.push(mesh)
           vertices.push(mesh);
           label_html.push("user" + (name) + " has " + round_money(money_heights[j][1]) + "<br>");
-          var avg_x = (trapezoid[0][0]+trapezoid[1][0])/2;
-          var avg_y = (trapezoid[0][1]+trapezoid[1][1]+trapezoid[2][1]+trapezoid[3][1])/4;
+          var avg_x = (trapezoid[0][0] + trapezoid[1][0]) / 2;
+          var avg_y = (trapezoid[0][1] + trapezoid[1][1] + trapezoid[2][1] + trapezoid[3][1]) / 4;
           label_positions.push([avg_x, avg_y])
           if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
             point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
@@ -2479,7 +2901,7 @@ user-scalable=no">
             }(pledger)
           }
         }
-        current_pledge += max_wealth*spacer_scalar
+        current_pledge += max_wealth * spacer_scalar
         pledger.monthly_aggregation_end = (current_pledge);
       }
       if (!mouse_under)
@@ -2576,8 +2998,8 @@ user-scalable=no">
           receiver.trapezoids.push(mesh)
           vertices.push(mesh);
           label_html.push("user" + (name) + " needs " + round_money(money_heights[j][1]) + "<br>");
-          var avg_x = (trapezoid[0][0]+trapezoid[1][0])/2.;
-          var avg_y = (trapezoid[0][1]+trapezoid[1][1]+trapezoid[2][1]+trapezoid[3][1])/4;
+          var avg_x = (trapezoid[0][0] + trapezoid[1][0]) / 2.;
+          var avg_y = (trapezoid[0][1] + trapezoid[1][1] + trapezoid[2][1] + trapezoid[3][1]) / 4;
           label_positions.push([avg_x, avg_y])
           if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
             point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
@@ -2597,7 +3019,7 @@ user-scalable=no">
             }(receiver)
           }
         }
-        current_receive += max_wealth*spacer_scalar
+        current_receive += max_wealth * spacer_scalar
         receiver.monthly_aggregation_end = (current_receive);
       }
       if (!mouse_under)
@@ -2629,7 +3051,7 @@ user-scalable=no">
         return [];
       var distribution = get_distribution(
         pledger_heights.map((a, i) => { return { name: window.pledgers[i].name, haveNeed: window.pledgers[i].last_income } }),
-        receiver_heights.map((a, i) => { return { name: window.receivers[i].name, haveNeed: window.receivers[i].last_income} }));
+        receiver_heights.map((a, i) => { return { name: window.receivers[i].name, haveNeed: window.receivers[i].last_income } }));
       var mouse_under = false;
       for (var i = 0; i < distribution.length; i++) {
         var payment = distribution[i]
@@ -2648,13 +3070,13 @@ user-scalable=no">
 
         window.todo_payment_trapezoids.push(mesh_trapezoid(trapezoid))
         vertices.push(mesh_trapezoid(trapezoid));
-        label_html.push(""+round_money(payment.amount));
-          var avg_x = (trapezoid[0][0]);
-          var avg_y = (trapezoid[0][1]+trapezoid[3][1])/2;
-          label_positions.push([avg_x, avg_y])
+        label_html.push("" + round_money(payment.amount));
+        var avg_x = (trapezoid[0][0]);
+        var avg_y = (trapezoid[0][1] + trapezoid[3][1]) / 2;
+        label_positions.push([avg_x, avg_y])
         if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
           point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
-            
+
           label_html.push("TODO Payment<br>From: user" + (payment.from) + "<br>To: user" + (payment.to) + "<br>Amount: " + round_money(payment.amount) + "<br> <div style='border-bottom: 1px solid #000'></div>");
           label_positions.push(window.mouse_canvas_position)
           mouse_under = true;
@@ -2870,27 +3292,6 @@ user-scalable=no">
         index++
       } window.last_payment_trapezoids[0] = window.last_payment_trapezoids[0].slice(0, index)
 
-      // var index = 0;
-      // for (var i = 0; i < window.todo_payment_trapezoids.length; i++) {
-      //     if (!window.last_payment_trapezoids[1][i])
-      //         window.last_payment_trapezoids[1][i] = []
-      //     var trapezoid = window.todo_payment_trapezoids[i]
-      //     var j = 0
-      //     if (!window.last_payment_trapezoids[1][i][j])
-      //         window.last_payment_trapezoids[1][i][j] = []
-      //     for (var k = 0; k < trapezoid.length; k++) {
-      //         if (window.last_payment_trapezoids[1][i][j][k] == undefined) {
-      //             if (k % 4 == 0)
-      //                 window.last_payment_trapezoids[1][i][j][k] = .5
-      //             else
-      //                 window.last_payment_trapezoids[1][i][j][k] = trapezoid[k]
-      //         }
-      //         var delta = (trapezoid[k] - window.last_payment_trapezoids[1][i][j][k]);
-      //         window.last_payment_trapezoids[1][i][j][k] += delta * Math.max(window.trapezoid_morph_step, 1. / 10.);
-      //     }
-      //     index++
-      // } window.last_payment_trapezoids[1] = window.last_payment_trapezoids[1].slice(0, index)
-
       var index = 0;
       for (var i = 0; i < window.todo_payment_trapezoids.length; i++) {
         if (!window.last_payment_trapezoids[3][i])
@@ -2979,22 +3380,22 @@ user-scalable=no">
         window.mouse_busy = false;
       }
 
-      window.show_option = (html)=>{
-      	options_div.style.display="block"
+      window.show_option = (html) => {
+        options_div.style.display = "block"
         options_div.innerHTML = html;
-        options_div.style.top= (window.mouse_page_position[1]-canvas_div.offsetTop)+ "px";
-        options_div.style.left= (window.mouse_page_position[0] - options_div.offsetWidth/ 2.) + "px";
-    }
+        options_div.style.top = (window.mouse_page_position[1] - canvas_div.offsetTop) + "px";
+        options_div.style.left = (window.mouse_page_position[0] - options_div.offsetWidth / 2.) + "px";
+      }
       window.show_labels = () => {
         if (label_html) {
           var html = label_html.reduce((acc, html, index) => {
-            var x = Math.floor(label_positions[index][0]*canvas_div.offsetWidth)
-            var y = Math.floor((1.-label_positions[index][1])*canvas_div.offsetHeight)
-            return acc + '<div style="transform:translate(-50%,-50%); position:absolute; display:block; left: '+x+'px; top: '+y+'px;"class="label_div">'+html+'</div>'
+            var x = Math.floor(label_positions[index][0] * canvas_div.offsetWidth)
+            var y = Math.floor((1. - label_positions[index][1]) * canvas_div.offsetHeight)
+            return acc + '<div style="transform:translate(-50%,-50%); position:absolute; display:block; left: ' + x + 'px; top: ' + y + 'px;"class="label_div">' + html + '</div>'
           }, "")
           label_div.style.display = "block"
-          if(html != window.last_label_html)
-          label_div.innerHTML = html;
+          if (html != window.last_label_html)
+            label_div.innerHTML = html;
           window.last_label_html = html;
           label_div.onmousemove = onmousemove
         }
@@ -3013,8 +3414,7 @@ user-scalable=no">
 
 <body>
   <div id="top_div">
-    <div class="add_pledger"
-      style="position:absolute; left:0%; top:10px; width: 33%; height:95%; text-align:center;">
+    <div class="add_pledger" style="position:absolute; left:0%; top:10px; width: 33%; height:95%; text-align:center;">
       <button onclick="add_pledger()">Add Pledger</button>
     </div>
     <div class="" style="position:absolute; left:33%; top:10px; width: 33%; height:95%; text-align:center;">
@@ -3022,8 +3422,7 @@ user-scalable=no">
       <input id="amount" type="number" value="10" min="0" step="1" style="display:inline-block; width:50%">
       </input>
     </div>
-    <div id="add_receiver"
-      style="position:absolute; left:66%; top:10px; width: 33%; height:95%; text-align:center;">
+    <div id="add_receiver" style="position:absolute; left:66%; top:10px; width: 33%; height:95%; text-align:center;">
       <button onclick="add_receiver()">Add Receiver</button>
     </div>
   </div>
