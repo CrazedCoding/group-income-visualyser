@@ -560,9 +560,9 @@ user-scalable=no">
         const paymentA = payments[i];
         for (let j = i + 1; j < payments.length; j++) {
           const paymentB = payments[j];
-          if (paymentA.from === paymentB.from && paymentA.to === paymentB.to || paymentA.to === paymentB.from && paymentA.from === paymentB.to) {
-            paymentA.amount += (paymentA.from === paymentB.from ? 1 : -1) * paymentB.amount;
-            paymentA.total += (paymentA.from === paymentB.from ? 1 : -1) * paymentB.total;
+          if (paymentA.from == paymentB.from && paymentA.to == paymentB.to || paymentA.to == paymentB.from && paymentA.from == paymentB.to) {
+            paymentA.amount += (paymentA.from == paymentB.from ? 1 : -1) * paymentB.amount;
+            paymentA.total += (paymentA.from == paymentB.from ? 1 : -1) * paymentB.total;
             payments.splice(j, 1);
             j--;
           }
