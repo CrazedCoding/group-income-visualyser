@@ -2556,10 +2556,10 @@ void main(void) {
             window.pledger_clicked = function (pledger) {
               return function () {
                 pause();
-
+                const graph = get_pledger_or_receiver(pledger.name).money_heights;
                 var change_pledge = `
 					  	<label style="display:inline-block;">Amount:</label>
-						<input id="pledge_amount" type="number" value="`+ pledger.pledge + `" step="1" style="display:inline-block; width:64px">`
+						<input id="pledge_amount" type="number" value="`+ graph[graph.length-1][1] + `" step="1" style="display:inline-block; width:64px">`
 
                 window.show_option("User" + pledger.name + ":<br>" + change_pledge +
                   "<button onclick=\"user_change_income_event(\'" + pledger.name + "\', parseFloat(document.getElementById(\'pledge_amount\').value))\">Set Income</button>" +
@@ -2627,10 +2627,11 @@ void main(void) {
             window.receiver_clicked = function (receiver) {
               return function () {
                 pause();
+                const graph = get_pledger_or_receiver(receiver.name).money_heights;
 
                 var change_pledge = `
 					  	<label style="display:inline-block;">Amount:</label>
-						<input id="receive_amount" type="number" value="`+ receiver.receive + `" step="1" style="display:inline-block; width:64px">`
+						<input id="receive_amount" type="number" value="`+ graph[graph.length-1][1] + `" step="1" style="display:inline-block; width:64px">`
 
                 window.show_option("User" + receiver.name + ":<br>" + change_pledge +
                   "<button onclick=\"user_change_income_event(\'" + receiver.name + "\', parseFloat(document.getElementById(\'receive_amount\').value))\">Set Income</button>" +
@@ -2706,8 +2707,6 @@ void main(void) {
               window.show_option(window.payment_message);
             }
           }
-        }
-        if (i >= window.current_monthly_payments.length) {
           pledger.monthly_aggregation += payment.amount / max_transferable;
           receiver.monthly_aggregation += payment.amount / max_transferable;
         }
