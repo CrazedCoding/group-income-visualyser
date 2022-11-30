@@ -56,12 +56,22 @@ user-scalable=no">
       border: 1px solid #77f;
     }
 
-    .label_div,
+    .label_div {
+      color: #000;
+      border: 3px solid black;
+      margin: 3px;
+      border-radius: 6px;
+      position: absolute;
+      background-color: #fff;
+      text-align: center;
+      z-index: 10;
+    }
     #options_div {
       color: #000;
+      border: 3px solid black;
+      border-radius: 3px;
       position: absolute;
-      background-color: rgba(255, 255, 255, .75);
-      border: 1px solid#77f;
+      background-color: #fff;
       text-align: center;
       z-index: 10;
     }
@@ -1648,7 +1658,8 @@ float saw(float x)
 
 void main()
 {
-    float edge = min(smoothstep(0., .05, saw(vUV.y*2.)), smoothstep(0., .025, saw(vUV.x*2.)));
+    float edge = min(smoothstep(0., .1, saw(vUV.y*2.)), smoothstep(0., .025, saw(vUV.x*2.)));
+    float arrow = 1.-smoothstep(0., .25, saw(saw(vUV.y*2.-1.)+vUV.x*4.-time));
     gl_FragColor = vec4(flux(vUV.y).bgr*edge, 1.);
     //gl_FragColor.rgb = vec3(1.-smoothstep(0., .1, abs(saw(vUV.x*4.+time)-vUV.y)));
     gl_FragColor.a = 1.;
@@ -1751,7 +1762,8 @@ vec4 saw(vec4 x)
 void main()
 {
     float edge = min(smoothstep(0., .125, saw(vUV.y*2.)), smoothstep(0., .025, saw(vUV.x*2.)));
-    gl_FragColor = vec4(flux(vUV.y*GR).brg  *edge, .5+.5*(1.-saw(edge*3.)));
+    float arrow = 1.-smoothstep(0., .25, saw(saw(vUV.y*2.-1.)+vUV.x*8.-time));
+    gl_FragColor = vec4(flux(weight*max_amount/PI/GR+arrow).brg  *edge, (1.-saw(edge*3.))*.25+.75);
 }`,
             "vertex": `
 precision highp float;
@@ -2590,7 +2602,9 @@ void main(void) {
         [1. / 3., pledger.vertical_height+ payment.amount / max_transferable, payment.amount / max_transferable, 1]]
         trapezoid = window.current_payment_trapezoids[i] ? window.current_payment_trapezoids[i].trapezoid.map(
           (v,i) => { 
-            return [v[0], (v[0] < .5 ? pledger.vertical_height : receiver.vertical_height) + v[1] / max_transferable, v[2] / max_transferable, v[3]] 
+            return [v[0], (v[0] < .5 ? pledger.vertical_height : receiver.vertical_height) + v[1] / max_transferable,
+             v[2] / max_transferable,
+             v[3]] 
           }) : trapezoid
 
         let vUV = [
