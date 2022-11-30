@@ -2055,13 +2055,6 @@ void main(void) {
       window.event_list = window.event_list.sort((a, b) => a.when - b.when)
     }
 
-    do {
-      user_join_event(5 + 5. * Math.pow(Math.random(), 2.), Math.random() * 30.)
-    } while (Math.random() > .25)
-    do {
-      user_join_event(-5 - 5. * Math.pow(Math.random(), 2.), Math.random() * 30.)
-    } while (Math.random() > .25)
-
     function get_amount() {
       var amount = Number(document.getElementById("amount").value)
       //$("#amount").val(Math.random())
