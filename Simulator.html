@@ -1,4 +1,5 @@
 <html>
+
   <head>
     <style type="text/css">
       * {
@@ -1733,9 +1734,8 @@ precision highp int;
 #define UNIFORM_INSERTION_POINT
 
 varying vec2 vPosition;
-varying highp float weight;
-varying highp float y_pos;
 varying vec4 vUV;
+varying vec2 dims;
 
 #define PI 3.14159265359
 #define E 2.7182818284
@@ -1749,14 +1749,19 @@ float saw(float x)
     float m = mod(abs(x), 1.0);
     return f*(1.0-m)+(1.0-f)*m;
 }
+vec2 saw(vec2 x)
+{
+    return vec2(saw(x.x), saw(x.y));
+}
 
 void main()
 {
-    float edge = min(smoothstep(0., .1, saw(vUV.y*2.)), smoothstep(0., .025, saw(vUV.x*2.)));
-    float arrow = 1.-smoothstep(0., .25, saw(saw(vUV.y*2.-1.)+vUV.x*4.-time));
+    float border = 4.;
+    float edge = 1.;
+    vec2 pix = vUV.xy*dims*vec2(width, height);
+    if(pix.x <= border || pix.x >= dims.x*width-border) edge = 0.;
+    if(pix.y <= border*2. || pix.y >= dims.y*height-border*2.) edge = 0.;
     gl_FragColor = vec4(flux(vUV.y).bgr*edge, 1.);
-    //gl_FragColor.rgb = vec3(1.-smoothstep(0., .1, abs(saw(vUV.x*4.+time)-vUV.y)));
-    gl_FragColor.a = 1.;
 }`,
               "vertex": `
 precision highp float;
@@ -1768,9 +1773,11 @@ attribute highp vec4 vertex;
 attribute highp vec4 color; 
 varying vec2 vPosition;
 varying vec4 vUV;
+varying vec2 dims;
 
 void main(void) {
     vPosition = vertex.xy;
+    dims = vertex.zw;
     vUV = color;
     gl_Position = vec4(vPosition*2.-1., 0., 1.);
 }
@@ -1836,8 +1843,7 @@ precision highp int;
 
 varying vec2 vPosition;
 varying vec4 vUV;
-varying highp float weight;
-varying highp float y_pos;
+varying vec2 dims;
 
 #define PI 3.14159265359
 #define E 2.7182818284
@@ -1868,9 +1874,13 @@ vec4 saw(vec4 x)
 
 void main()
 {
-    float edge = min(smoothstep(0., .125, saw(vUV.y*2.)), smoothstep(0., .025, saw(vUV.x*2.)));
-    float arrow = 1.-smoothstep(0., .25, saw(saw(vUV.y*2.-1.)+vUV.x*8.-time));
-    gl_FragColor = vec4(flux(weight*max_amount/PI/GR+arrow).brg  *edge, (1.-saw(edge*3.))*.25+.75);
+    float border = 4.;
+    float edge = 1.;
+    vec2 pix = vUV.xy*dims*vec2(width, height);
+    if(pix.x <= border || pix.x >= dims.x*width-border) edge = 0.;
+    if(pix.y <= border*2. || pix.y >= dims.y*height-border*2.) edge = 0.;
+    float arrow = 1.-smoothstep(0., .25, saw(saw(vUV.y*2.-1.)+vUV.x*8.-time/PI));
+    gl_FragColor = vec4(flux(2.*PI+PI*arrow*vUV.w+(1.-vUV.w)*PI)  *edge, (1.-saw(edge*3.))*.25+.75);
 }`,
               "vertex": `
 precision highp float;
@@ -1880,16 +1890,14 @@ precision highp int;
 
 attribute highp vec4 vertex; 
 attribute highp vec4 color;
-varying highp float weight;
-varying highp float y_pos;
 varying vec2 vPosition;
 varying vec4 vUV;
+varying vec2 dims;
 
 void main(void) {
-  	weight = vertex.z;
-  	y_pos = vertex.w;
     vPosition = vertex.xy;
     vUV = color;
+    dims = vertex.zw;
     gl_Position = vec4(vPosition*2.-1., 0., 1.);
 }
             `
@@ -2080,26 +2088,15 @@ void main(void) {
         return ((new Date()).getTime() / 1E3 - window.uniform_start_time) * window.time_dilation;
       }
 
-      function back() {
-        var delta = (window.get_time() / time_window) % 1
-        window.uniform_start_time += ((delta < .25 ? 1. : 0) + delta) * time_window / window.time_dilation;
-        window.uniform_start_time = Math.max(window.when_group_created, window.uniform_start_time)
-      }
-
-      function forward() {
-        var delta = 1.0001 - (window.get_time() / time_window) % 1
-        window.uniform_start_time -= delta * time_window / window.time_dilation - 1. / 1E3;
-      }
-
       function toggle_pause() {
         if (!window.paused) {
           window.pause_start_time = new Date().getTime() / 1E3
           document.getElementById("play_button").style.display = 'inline-block';
-          document.getElementById("pause_button").style.display = 'hidden';
+          document.getElementById("pause_button").style.display = 'none';
         } else {
           window.uniform_start_time += new Date().getTime() / 1E3 - window.pause_start_time
-          window.show_option("");
-          document.getElementById("play_button").style.display = 'hidden';
+          window.hide_option();
+          document.getElementById("play_button").style.display = 'none';
           document.getElementById("pause_button").style.display = 'inline-block';
         }
         window.paused = !window.paused;
@@ -2494,12 +2491,12 @@ void main(void) {
             receiver.time_variable = event.when
 
             var event_time = event.when / time_window - Math.floor(get_time() / time_window)
-
+            var width = (1. - event_time) * 2. / 3. + 1. / 3.;
             let trapezoid = [
-              [event_time / 3., old_pledger_income, event.amount, 0],
-              [1. - event_time / 3., old_receiver_income, event.amount, 0],
-              [1. - event_time / 3., new_receiver_income, event.amount, 1],
-              [event_time / 3., new_pledger_income, event.amount, 1]
+              [event_time / 3., old_pledger_income, width, event.amount],
+              [1. - event_time / 3., old_receiver_income, width, event.amount],
+              [1. - event_time / 3., new_receiver_income, width, event.amount],
+              [event_time / 3., new_pledger_income, width, event.amount]
             ]
             window.current_payment_trapezoids.push({
               from: event.from,
@@ -2663,10 +2660,10 @@ void main(void) {
             max_wealth = Math.max(Math.max(from_wealth, to_wealth), max_wealth)
 
             let trapezoid = [
-              [from_time / 3., current_pledge, from_wealth, 0],
-              [to_time / 3., current_pledge, from_wealth, 0],
-              [to_time / 3., current_pledge + to_wealth, to_wealth, 1],
-              [from_time / 3., current_pledge + from_wealth, from_wealth, 1]
+              [from_time / 3., current_pledge, (to_time - from_time) / 3., to_wealth],
+              [to_time / 3., current_pledge, (to_time - from_time) / 3., to_wealth],
+              [to_time / 3., current_pledge + to_wealth, (to_time - from_time) / 3., to_wealth],
+              [from_time / 3., current_pledge + from_wealth, (to_time - from_time) / 3., to_wealth]
             ]
             let vUV = [
               [0, 0, 0, 0],
@@ -2743,10 +2740,10 @@ void main(void) {
             max_wealth = Math.max(Math.max(from_wealth, to_wealth), max_wealth)
 
             let trapezoid = [
-              [1. - from_time / 3., current_receive, from_wealth, 0],
-              [1. - to_time / 3., current_receive, from_wealth, 0],
-              [1. - to_time / 3., current_receive + to_wealth, to_wealth, 1],
-              [1. - from_time / 3., current_receive + from_wealth, from_wealth, 1]
+              [1. - from_time / 3., current_receive, (to_time - from_time) / 3., to_wealth],
+              [1. - to_time / 3., current_receive, (to_time - from_time) / 3., to_wealth],
+              [1. - to_time / 3., current_receive + to_wealth, (to_time - from_time) / 3., to_wealth],
+              [1. - from_time / 3., current_receive + from_wealth, (to_time - from_time) / 3., to_wealth]
             ]
             let vUV = [
               [0, 0, 0, 0],
@@ -2829,24 +2826,24 @@ void main(void) {
           }
 
           let trapezoid = [
-            [1. / 3., pledger.vertical_height, payment.amount / max_transferable, 0],
-            [2. / 3., receiver.vertical_height, payment.amount / max_transferable, 0],
-            [2. / 3., receiver.vertical_height + payment.amount / max_transferable, payment.amount / max_transferable, 1],
-            [1. / 3., pledger.vertical_height + payment.amount / max_transferable, payment.amount / max_transferable, 1]
+            [1. / 3., pledger.vertical_height, 1. / 3., payment.amount / max_transferable],
+            [2. / 3., receiver.vertical_height, 1. / 3., payment.amount / max_transferable],
+            [2. / 3., receiver.vertical_height + payment.amount / max_transferable, 1. / 3., payment.amount / max_transferable],
+            [1. / 3., pledger.vertical_height + payment.amount / max_transferable, 1. / 3., payment.amount / max_transferable]
           ]
           trapezoid = window.current_payment_trapezoids[i] ? window.current_payment_trapezoids[i].trapezoid.map(
             (v, i) => {
               return [v[0], (v[0] < .5 ? pledger.vertical_height : receiver.vertical_height) + v[1] / max_transferable,
-                v[2] / max_transferable,
-                v[3]
+                v[2],
+                v[3] / max_transferable
               ]
             }) : trapezoid
-
+          var complete = i >= window.current_monthly_payments.length ? 1 : 0;
           let vUV = [
-            [0, 0, 0, 0],
-            [1, 0, 1, 0],
-            [1, 1, 1, 1],
-            [0, 1, 0, 1]
+            [0, 0, 0, complete],
+            [1, 0, 0, complete],
+            [1, 1, 0, complete],
+            [0, 1, 0, complete]
           ]
 
           label_html.push("" + round_money(payment.amount));
@@ -2933,7 +2930,7 @@ void main(void) {
             unpause();
             return;
           }
-          document.getElementById("pause_button").style.display = "inline-block"
+          pause()
         };
         var options_div = document.getElementById("options_div")
         var label_div = document.getElementById("label_div")
@@ -2975,6 +2972,7 @@ void main(void) {
           window.mouse_canvas_position = [e.pageX / canvas_div.offsetWidth, 1. - (e.pageY - canvas_div.offsetTop) / canvas_div.offsetHeight]
         };
         canvas_div.onmousemove = onmousemove
+        window.hide_option()
       }
       window.minimize = false;
       window.toggle_minimize = () => {
@@ -2994,7 +2992,7 @@ void main(void) {
       </div>
       <div class="" style="position:absolute; z-index: 3; left:33%; top:10px; width: 33%; height:95%; text-align:center;">
         <label style="display:inline-block;">Amount:</label>
-        <input id="amount" type="number" value="10" min="0" step="1" style="display:inline-block; width:50%">
+        <input id="amount" type="number" value="5" min="0" step="1" style="display:inline-block; width:50%">
         </input>
         <br>
         <br>
@@ -3015,10 +3013,8 @@ void main(void) {
     </div>
     <div id="bottom_div">
       <div id="controls_div" style="position:absolute; bottom: 16px; left:0%; width: 100%; text-align:center;">
-        <button style="border-color: #f00" onclick="back()">&lt;&lt;</button>
         <button id="pause_button" style="border-color: #f00" onclick="pause()">ll</button>
         <button id="play_button" style="display:none; border-color: #f00" onclick="unpause()">&gt;</button>
-        <button style="border-color: #f00" onclick="forward()">&gt;&gt;</button>
         <button style="border-color: #f00" onclick="clear_all()">Clear &amp; Reset</button>
       </div>
     </div>
