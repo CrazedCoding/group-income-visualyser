@@ -1,3 +1,5 @@
+<meta name="viewport" content="width=device-width, initial-scale=1.0, 
+user-scalable=no">
 <html>
 
   <head>
@@ -1987,7 +1989,7 @@ void main()
   	float time_line = 1.-smoothstep(0., 1./90., saw(abs(uv.x*3.*sign(uv.x)-1.+time/time_window*3.*2./3.)));
   	float flash =1.;
     gl_FragColor = GR*vec4(flash,flash, flash, 2.)*time_line*start_point*vec4(vec3(smoothstep(.49, .51, (sin(uv.y*y_scalar*PI/2.))*.5+.5)), 1.);
-  	gl_FragColor.rgb += vec3(1.-smoothstep(0., .01, length(uv-(mouse_position*2.-1.))));
+  	//gl_FragColor.rgb += vec3(1.-smoothstep(0., .01, length(uv-(mouse_position*2.-1.))));
 }`,
               "vertex": `
 precision highp float;
@@ -2974,7 +2976,7 @@ void main(void) {
         canvas_div.onmousemove = onmousemove
         window.hide_option()
       }
-      window.minimize = false;
+      window.minimize = true;
       window.toggle_minimize = () => {
         if (window.distribution_locked) return;
         var button = document.getElementById("minimize");
@@ -2996,7 +2998,7 @@ void main(void) {
         </input>
         <br>
         <br>
-        <button id="minimize" style="display:inline-block;" onclick="window.toggle_minimize()">Minimize</button>
+        <button id="minimize" style="display:inline-block;" onclick="window.toggle_minimize()">Unminimize</button>
         <br>
         <label id="lock_message" style="border:none; background-color: rgba(0,0,0,0) !important; color: #f70!important; display:inline-block;">Distribution
           Locked</Label>
