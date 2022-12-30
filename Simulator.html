@@ -107,14 +107,14 @@ user-scalable=no">
       /* https://github.com/okTurtles/group-income/blob/master/contracts/0.0.9/group.js */
       // frontend/model/contracts/misc/flowTyper.js
       var EMPTY_VALUE = Symbol("@@empty");
-      var isEmpty = (v) => v === EMPTY_VALUE;
-      var isNil = (v) => v === null;
-      var isUndef2 = (v) => typeof v === "undefined";
-      var isBoolean2 = (v) => typeof v === "boolean";
-      var isNumber = (v) => typeof v === "number";
-      var isString = (v) => typeof v === "string";
-      var isObject2 = (v) => !isNil(v) && typeof v === "object";
-      var isFunction = (v) => typeof v === "function";
+      var isEmpty = (v) => v == EMPTY_VALUE;
+      var isNil = (v) => v == null;
+      var isUndef2 = (v) => typeof v == "undefined";
+      var isBoolean2 = (v) => typeof v == "boolean";
+      var isNumber = (v) => typeof v == "number";
+      var isString = (v) => typeof v == "string";
+      var isObject2 = (v) => !isNil(v) && typeof v == "object";
+      var isFunction = (v) => typeof v == "function";
       var getType2 = (typeFn, _options) => {
         if (isFunction(typeFn.type))
           return typeFn.type(_options);
@@ -143,7 +143,7 @@ user-scalable=no">
         }
         getSourceFile() {
           const fileNames = this.stack.match(/(\/[\w_\-.]+)+(\.\w+:\d+:\d+)/g) || [];
-          return fileNames.find((fileName) => fileName.indexOf("/flowTyper-js/dist/") === -1) || "";
+          return fileNames.find((fileName) => fileName.indexOf("/flowTyper-js/dist/") == -1) || "";
         }
         getErrorInfo() {
           return `
@@ -173,7 +173,7 @@ user-scalable=no">
       };
       var literalOf = (primitive) => {
         function literal(value, _scope = "") {
-          if (isEmpty(value) || value === primitive)
+          if (isEmpty(value) || value == primitive)
             return primitive;
           throw validatorError(literal, value, _scope);
         }
@@ -301,7 +301,7 @@ user-scalable=no">
           const cardinality = typeFuncs.length;
           if (isEmpty(value))
             return typeFuncs.map((fn) => fn(value));
-          if (Array.isArray(value) && value.length === cardinality) {
+          if (Array.isArray(value) && value.length == cardinality) {
             const tupleValue = [];
             for (let i = 0; i < cardinality; i += 1) {
               tupleValue.push(typeFuncs[i](value[i], _scope));
@@ -526,7 +526,7 @@ user-scalable=no">
       var DECIMALS_MAX = 8;
 
       function commaToDots(value) {
-        return typeof value === "string" ? value.replace(/,/, ".") : value.toString();
+        return typeof value == "string" ? value.replace(/,/, ".") : value.toString();
       }
 
       function isNumeric(nr) {
@@ -631,13 +631,13 @@ function reduceDistribution (payments) {
       const paymentB = payments[j]
 
       // Were paymentA and paymentB between the same two users?
-      if ((paymentA.from === paymentB.from && paymentA.to === paymentB.to) ||
-        (paymentA.to === paymentB.from && paymentA.from === paymentB.to)) {
+      if ((paymentA.from == paymentB.from && paymentA.to == paymentB.to) ||
+        (paymentA.to == paymentB.from && paymentA.from == paymentB.to)) {
         // Add or subtract paymentB's amount to paymentA's amount, depending on the relative
         // direction of the two payments:
-        paymentA.amount += (paymentA.from === paymentB.from ? 1 : -1) * paymentB.amount
+        paymentA.amount += (paymentA.from == paymentB.from ? 1 : -1) * paymentB.amount
         if (!paymentA.totalLocked && !paymentB.totalLocked) {
-          paymentA.total += (paymentA.from === paymentB.from ? 1 : -1) * paymentB.total
+          paymentA.total += (paymentA.from == paymentB.from ? 1 : -1) * paymentB.total
         }
         // Remove paymentB from payments, and decrement the inner sentinal loop variable:
         payments.splice(j, 1)
@@ -704,8 +704,8 @@ function parsedistributionFromEvents (
       })
     },
     userExitsGroupEvent (event) {
-      const idx = groupMembers.findIndex(v => v.name === event.data.name)
-      if (idx === -1) throw new Error(`userExitsGroupEvent: no such user: ${event.data.name}`)
+      const idx = groupMembers.findIndex(v => v.name == event.data.name)
+      if (idx == -1) throw new Error(`userExitsGroupEvent: no such user: ${event.data.name}`)
       groupMembers.splice(idx, 1)
     }
     // TODO: if we decide to handle latePayments as part of the distribution
@@ -719,7 +719,7 @@ function parsedistributionFromEvents (
   const distributionSequences = [sequence]
   while (distributionEventsCopy.length > 0) {
     const event = distributionEventsCopy.shift()
-    if (prevDistEvent === 'paymentEvent' && event.type !== 'paymentEvent') {
+    if (prevDistEvent == 'paymentEvent' && event.type !== 'paymentEvent') {
       sequence = [event]
       distributionSequences.push(sequence)
     } else {
@@ -729,7 +729,7 @@ function parsedistributionFromEvents (
   }
   const reduceField = (field, dir, name, dist) => {
     return dist.reduce((a, p) => {
-      return p[dir] === name ? a + p[field] : a
+      return p[dir] == name ? a + p[field] : a
     }, 0)
   }
   const ensureTotalSet = (dist) => {
@@ -740,7 +740,7 @@ function parsedistributionFromEvents (
   }
   const todoExistsInDistribution = (todo, dist) => {
     for (const oldTodo of dist) {
-      if (oldTodo.from === todo.from && oldTodo.to === todo.to) {
+      if (oldTodo.from == todo.from && oldTodo.to == todo.to) {
         return true
       }
     }
@@ -772,12 +772,12 @@ function parsedistributionFromEvents (
   // for (const sequence of distributionSequences) {
   for (let i = 0; i < distributionSequences.length; i++) {
     const sequence = distributionSequences[i]
-    // console.log('\n======= LOOP!!! Sequence:', sequence, '\n')
+    // console.log('\n===== LOOP!!! Sequence:', sequence, '\n')
     payments = []
     for (const event of sequence) {
       eventHandlers[event.type](event)
     }
-    if (distribution.length === 0) {
+    if (distribution.length == 0) {
       distribution = ensureTotalSet(mincomeProportional(groupMembers))
     }
     if (adjusted) {
@@ -793,7 +793,7 @@ function parsedistributionFromEvents (
       //     // now find affected lockedTodos
       //     for (const todo of lockedTodos) {
       //       console.log({ reserver, totalChange, todo })
-      //       if (Math.sign(reserver.oldHaveNeed) === Math.sign(reserver.haveNeed)) {
+      //       if (Math.sign(reserver.oldHaveNeed) == Math.sign(reserver.haveNeed)) {
       //         if (reserver.haveNeed < 0) {
       //           // a needer has changed their need, only modify old todo if need was reduced
       //           if (totalChange < 0) {
@@ -875,12 +875,12 @@ function parsedistributionFromEvents (
         // take the total that was redistributed and subtract it from the inputs proportionally
         const tempHaveNeeds = [{ name: redistribution.from, haveNeed: redistribution.amount }]
         massagedDistribution.filter(todo => {
-          return todo.to === redistribution.to && todo.from !== redistribution.from
+          return todo.to == redistribution.to && todo.from !== redistribution.from
         }).forEach(todo => {
           tempHaveNeeds.push({ name: todo.from, haveNeed: -(todo.amount) })
         })
         mincomeProportional(tempHaveNeeds).forEach(todo => {
-          const theTodo = massagedDistribution.find(i => i.from === todo.to && i.to === redistribution.to)
+          const theTodo = massagedDistribution.find(i => i.from == todo.to && i.to == redistribution.to)
           theTodo.amount -= todo.amount
           theTodo.total -= todo.amount
         })
@@ -893,17 +893,17 @@ function parsedistributionFromEvents (
       for (const reserver of reserves) {
         if (reserver.haveNeed > 0) {
           const remainder = reserver.haveNeed - massagedDistribution
-            .filter(todo => todo.from === reserver.name).reduce((a, i) => a + i.amount, 0)
+            .filter(todo => todo.from == reserver.name).reduce((a, i) => a + i.amount, 0)
           // TODO: next line doesn't seem necessary, remove if certain
-          // remainder -= payments.filter(p => p.from === reserver.name).reduce((a, i) => a + i.amount, 0)
+          // remainder -= payments.filter(p => p.from == reserver.name).reduce((a, i) => a + i.amount, 0)
           if (remainder > 0) {
             remainderHaveNeeds.push({ name: reserver.name, haveNeed: remainder })
             reserverRemainders[reserver.name] = remainder
           }
         } else if (reserver.haveNeed < 0) {
           const remainder = reserver.haveNeed + massagedDistribution
-            .filter(todo => todo.to === reserver.name).reduce((a, i) => a + i.amount, 0)
-          // remainder += payments.filter(p => p.from === reserver.name).reduce((a, i) => a + i.amount, 0)
+            .filter(todo => todo.to == reserver.name).reduce((a, i) => a + i.amount, 0)
+          // remainder += payments.filter(p => p.from == reserver.name).reduce((a, i) => a + i.amount, 0)
           if (remainder < 0) {
             remainderHaveNeeds.push({ name: reserver.name, haveNeed: remainder })
             reserverRemainders[reserver.name] = remainder
@@ -928,17 +928,17 @@ function parsedistributionFromEvents (
       for (const badRemainder of badRemainders) {
         const remainderRedist = [{ name: badRemainder.from, haveNeed: badRemainder.amount }]
         for (const r of redistribution) {
-          if (r.to === badRemainder.to) {
+          if (r.to == badRemainder.to) {
             // for this input, calculate how much room there is available to distribute
             // the remainder too, subtract the room from the sum of the other remainders
             const availableRoom = reserverRemainders[r.from] - redistribution
-              .filter(todo => todo.from === r.from)
+              .filter(todo => todo.from == r.from)
               .reduce((a, i) => a + i.amount, 0)
             remainderRedist.push({ name: r.from, haveNeed: -availableRoom })
           }
         }
         mincomeProportional(remainderRedist).forEach(todo => {
-          const theTodo = redistribution.find(i => i.to === badRemainder.to && i.from === todo.to)
+          const theTodo = redistribution.find(i => i.to == badRemainder.to && i.from == todo.to)
           theTodo.amount += todo.amount
           theTodo.total += todo.amount
         })
@@ -1123,10 +1123,10 @@ function parsedistributionFromEvents (
         //   for(const format in Format) {
         //     if()
         //     for(const key in Format.Algorithm) {
-        //       if(typeof Format[key] === "string" && typeof obj[key] === "string") final[key].prototype = obj[key]
-        //       else if(typeof Algorithm[key] === "boolean" && typeof obj[key] === "boolean") final[key].prototype =  obj[key]
+        //       if(typeof Format[key] == "string" && typeof obj[key] == "string") final[key].prototype = obj[key]
+        //       else if(typeof Algorithm[key] == "boolean" && typeof obj[key] == "boolean") final[key].prototype =  obj[key]
         //       else if(typeof Array.isArray(Algorithm[key]) && Array.isArray(obj[key])) final[key].prototype = obj[key].map(Format.clean)
-        //       else if(typeof Algorithm[key] === "object" && typeof obj[key] === "object") final[key].prototype = Format.clean(obj[key])
+        //       else if(typeof Algorithm[key] == "object" && typeof obj[key] == "object") final[key].prototype = Format.clean(obj[key])
         //     }
         //   }
         // }
@@ -2642,7 +2642,7 @@ void main(void) {
 
         // Compute barycentric coordinates
         var b = (dot00 * dot11 - dot01 * dot01),
-          inv = b === 0 ? 0 : (1 / b),
+          inv = b == 0 ? 0 : (1 / b),
           u = (dot11 * dot02 - dot01 * dot12) * inv,
           v = (dot00 * dot12 - dot01 * dot02) * inv
         return !vectors_are_colinear([v0x, v0y], [v1x, v1y]) && u >= 0 && v >= 0 && (u + v < 1)
