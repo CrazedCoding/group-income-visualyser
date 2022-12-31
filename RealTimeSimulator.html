@@ -2847,6 +2847,7 @@ void main(void) {
             pledger_or_receiver.money_heights.push([pledger_or_receiver.time_variable, pledger_or_receiver.last_income])
           } else if (event.type == EVENT_TYPES.MONTHLY_BALANCE) {
             window.last_distribution = null;
+            window.distribution_events = []
             window.distribution_locked = false;
             window.pledgers = JSON.parse(JSON.stringify(event.pledgers)).map((v) => {
               v.time_variable = event.when;
@@ -2855,6 +2856,7 @@ void main(void) {
               v.money_heights = [
                 [v.time_variable, v.last_income]
               ];
+              window.distribution_events.push({type:"haveNeedEvent", data:{name:v.name, haveNeed:v.income}})
               return v;
             })
             window.receivers = JSON.parse(JSON.stringify(event.receivers)).map((v) => {
@@ -2864,6 +2866,7 @@ void main(void) {
               v.money_heights = [
                 [v.time_variable, v.last_income]
               ];
+              window.distribution_events.push({type:"haveNeedEvent", data:{name:v.name, haveNeed:v.income}})
               return v;
             })
             window.current_payment_trapezoids = []
@@ -2872,7 +2875,7 @@ void main(void) {
 
           var pledger_heights = all_pledger_heights()
           var receiver_heights = all_receiver_heights()
-          if (pledger_heights.length > 0 && receiver_heights.length > 0) {
+          if (window.pledgers.length > 0 && window.receivers.length > 0) {
             window.last_distribution = parsedistributionFromEvents(window.distribution_events, {adjusted: true, minimizeTxns: window.minimize})
           }
         }
