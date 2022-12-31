@@ -614,7 +614,7 @@ user-scalable=no">
         for (const todo of distribution) {
           todo.amount = saferFloat(todo.amount);
           todo.total = saferFloat(todo.total);
-          todo.partial = todo.total !== todo.amount;
+          todo.partial = todo.total != todo.amount;
           todo.isLate = false;
           todo.dueOn = dueOn;
           todo.unlocked = true;
@@ -719,7 +719,7 @@ function parsedistributionFromEvents (
   const distributionSequences = [sequence]
   while (distributionEventsCopy.length > 0) {
     const event = distributionEventsCopy.shift()
-    if (prevDistEvent == 'paymentEvent' && event.type !== 'paymentEvent') {
+    if (prevDistEvent == 'paymentEvent' && event.type != 'paymentEvent') {
       sequence = [event]
       distributionSequences.push(sequence)
     } else {
@@ -747,7 +747,7 @@ function parsedistributionFromEvents (
   }
   const lockTodos = (dist) => {
     for (const todo of dist) {
-      if (todo.amount !== todo.total) {
+      if (todo.amount != todo.total) {
         todo.totalLocked = true
         // this is a kind of hack for dealing with certain minimization scenarios
         // where the amount we paid results in a negative value for the unminimized
@@ -875,7 +875,7 @@ function parsedistributionFromEvents (
         // take the total that was redistributed and subtract it from the inputs proportionally
         const tempHaveNeeds = [{ name: redistribution.from, haveNeed: redistribution.amount }]
         massagedDistribution.filter(todo => {
-          return todo.to == redistribution.to && todo.from !== redistribution.from
+          return todo.to == redistribution.to && todo.from != redistribution.from
         }).forEach(todo => {
           tempHaveNeeds.push({ name: todo.from, haveNeed: -(todo.amount) })
         })
@@ -977,7 +977,7 @@ function parsedistributionFromEvents (
   for (const todo of distribution) {
     todo.amount = saferFloat(todo.amount)
     todo.total = saferFloat(todo.total)
-    todo.partial = todo.total !== todo.amount
+    todo.partial = todo.total != todo.amount
     todo.isLate = false
     todo.dueOn = dueDate
     delete todo.totalLocked
