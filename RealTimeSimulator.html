@@ -2793,6 +2793,7 @@ void main(void) {
             window.receivers = window.receivers.filter((v) => {
               return v.name != event.name
             })
+            window.distribution_events.push({type:"userExitsGroupEvent", data:{name:event.name}})
           } else if (event.type == EVENT_TYPES.PAYMENT) {
             window.distribution_events.push({type:"paymentEvent", data:{from:event.from, to:event.to, amount:event.amount}})
             window.distribution_locked = true;
