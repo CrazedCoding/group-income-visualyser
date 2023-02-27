@@ -6,6 +6,7 @@ user-scalable=no">
   <style type="text/css">
     * {
       font-family: 'Poppins' !important;
+      font-weight: 500;
     }
 
     body,
@@ -18,6 +19,21 @@ user-scalable=no">
       color: #fff;
       margin: 0px;
       background: linear-gradient(13.74deg, rgba(255, 255, 255, 0.5) 31.65%, rgba(208, 222, 234, 0.5) 103.75%);
+    }
+
+    font1 {
+      font-family: 'Poppins';
+      font-style: normal;
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 21px;
+    }
+    font2 {
+      font-family: 'Poppins';
+      font-style: normal;
+      font-weight: 600;
+      font-size: 16px;
+      line-height: 24px;
     }
 
     button {
@@ -103,8 +119,11 @@ user-scalable=no">
     }
 
     #image-context {
+      position: absolute !important;
       z-index: 2 !important;
       height: 100% !important;
+      left: 5%;
+      width: 90% !important; 
     }
 
     #bottom_div {
@@ -2109,12 +2128,17 @@ vec2 saw(vec2 x)
 
 void main()
 {
-    float border = 4.;
-    float edge = 1.;
-    vec2 pix = vUV.xy*dims*vec2(width, height);
-    if(pix.x >= dims.x*width-border) edge = 0.;
-    if(pix.y <= border*2.) edge = 0.;
-    gl_FragColor = vec4(flux(vUV.z*PI/3.).bgr*(1.-edge)+edge, 1.);
+    float border = 6.;
+    float edgeA = 0.;
+    float edgeB = 0.;
+    vec2 size = dims*vec2(width, height);
+    vec2 uv = vUV.xy*2.-1.;
+    vec2 uv2 = uv-vec2(-1., 1.)*border/size*2.;
+    uv = sign(uv)*pow(abs(uv), vec2(16.));
+    uv2 = sign(uv2)*pow(abs(uv2), vec2(16.));
+    edgeA = smoothstep(0., 1., 16.*((1.-border/length(size)-length(uv2))));
+    edgeB = smoothstep(0., 1., 16.*((1.-border/length(size)-length(uv))));
+    gl_FragColor = vec4(1.)*edgeA+vec4(flux(vUV.z*PI/3.).bgr, 1.)*(1.-edgeA)*edgeB;
 }`,
           "vertex": `
 precision highp float;
@@ -2212,7 +2236,7 @@ vec4 saw(vec4 x)
 
 void main()
 {
-    float border = 16.;
+    float border = 4.;
     float edge = 1.;
     vec2 pix = vUV.xy*dims*vec2(width, height);
     border = min(border, dims.y*height/8.);
@@ -2616,7 +2640,7 @@ void main(void) {
 
         vertices.push(mesh_trapezoid(trapezoid));
         texcoords.push(mesh_trapezoid(vUV));
-        label_html.push("<i>User " + pledger.name + " Pledged</i><br>" + "<b>Pledged $" + pledger.last_income + "</b><br>");
+        label_html.push("<font1>User " + pledger.name + " Pledged</font1><br>" + "<font2>Pledged $" + pledger.last_income + "</font2><br>");
         label_positions.push([avg_x, current_pledge / max_transferable + avg_y])
 
         if (point_in_triangle(mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
@@ -2662,16 +2686,17 @@ void main(void) {
           [2. / 3., (current_receive + receiver.last_income) / max_transferable, 1. / 3., receiver.last_income / max_transferable],
           [1, (current_receive + receiver.last_income) / max_transferable, 1. / 3., receiver.last_income / max_transferable]
         ]
+        var index = i+window.pledgers.length
         let vUV = [
-          [0, 0, i, 0],
-          [1, 0, i, 0],
-          [1, 1, i, 1],
-          [0, 1, i, 1]
+          [1, 0, index, 0],
+          [0, 0, index, 0],
+          [0, 1, index, 1],
+          [1, 1, index, 1]
         ]
 
         vertices.push(mesh_trapezoid(trapezoid));
         texcoords.push(mesh_trapezoid(vUV));
-        label_html.push("<i>User " + receiver.name + " Receives</i><br>" + "<b>Receives $" + receiver.last_income + "</b><br>");
+        label_html.push("<font1>User " + receiver.name + " Receives</font1><br>" + "<font2>Receives $" + receiver.last_income + "</font2><br>");
         label_positions.push([avg_x, current_receive / max_transferable + avg_y])
         if (point_in_triangle(mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
           point_in_triangle(mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
@@ -2792,7 +2817,7 @@ void main(void) {
 
       function onmousemove(e) {
         mouse_page_position = [e.pageX, e.pageY]
-        mouse_canvas_position = [e.pageX / canvas_div.offsetWidth, 1. - (e.pageY - canvas_div.offsetTop) / canvas_div.offsetHeight]
+        mouse_canvas_position = [(e.pageX - canvas_div.offsetLeft) / canvas_div.offsetWidth, 1. - (e.pageY - canvas_div.offsetTop) / canvas_div.offsetHeight]
       };
       canvas_div.onmousemove = onmousemove
       canvas_div.onmouseup = function (e) {
@@ -2847,7 +2872,7 @@ void main(void) {
 
       function onmousemove(e) {
         mouse_page_position = [e.pageX, e.pageY]
-        mouse_canvas_position = [e.pageX / canvas_div.offsetWidth, 1. - (e.pageY - canvas_div.offsetTop) / canvas_div.offsetHeight]
+        mouse_canvas_position = [(e.pageX - canvas_div.offsetLeft) / canvas_div.offsetWidth, 1. - (e.pageY - canvas_div.offsetTop) / canvas_div.offsetHeight]
       };
       canvas_div.onmousemove = onmousemove
       window.hide_option()
