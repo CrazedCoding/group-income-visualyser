@@ -178,6 +178,14 @@ user-scalable=no">
       /* About */
       vertical-align: top;
     }
+    .wealth_div {
+      z-index: 3;
+      background: #FFFFFF;
+      border: 1px solid #D0DEEA;
+      box-shadow: 4px 4px 0px #FFD43D;
+      border-radius: 4px;
+      
+    } 
 
     /* Para */
   </style>
@@ -2427,7 +2435,7 @@ void main(void) {
             var y = Math.floor((1. - label_positions[index][1]) * canvas_div.offsetHeight)
             var w = Math.floor(label_positions[index][2] * canvas_div.offsetWidth)
             var h = Math.floor((label_positions[index][3]) * canvas_div.offsetHeight)
-            return acc + '<div style="transform:translate(-50%,-50%); position:absolute; text-align:center; display:block; left: ' + x + 'px; top: ' + y + 'px;  width: ' + w + 'px; height: ' + h + 'px; color: #000 !important; background: #fff; border: 1px solid #000;"class="label_div">' + html + '</div>'
+            return acc + '<div class="wealth_div" style="transform:translate(-50%,-50%); position:absolute; text-align:center; display:block; left: ' + x + 'px; top: ' + y + 'px;  width: ' + w + 'px; height: ' + h + 'px; color: #000 !important; background: #fff; border: 1px solid #000;"class="label_div">' + html + '</div>'
           }, "")
           html += total_html.reduce((acc, html, index) => {
             var x = Math.floor(total_positions[index][0] * canvas_div.offsetWidth)
