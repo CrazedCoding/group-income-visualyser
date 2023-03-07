@@ -1742,8 +1742,6 @@ user-scalable=no">
   </script>
   <script type="text/javascript">
     var algorithm = {
-      "name": "Temporal Fairness Algorithm",
-      "public": true,
       "pipeline": {
         "contexts": [{
           "name": "image-context",
@@ -1754,104 +1752,7 @@ user-scalable=no">
             "type": "NEXT_HIGHEST_POWER_OF_TWO"
           }
         }],
-        "programs": [{
-          "name": "wealth-program",
-          "uniforms": [{
-            "type": "FLOAT",
-            "name": "width",
-            "value": () => {
-              return pipeline.getContext('image-context').canvas.width;
-            }
-          },
-          {
-            "type": "FLOAT",
-            "name": "height",
-            "value": () => {
-              return pipeline.getContext('image-context').canvas.height;
-            }
-          },
-          {
-            "type": "VEC_TWO",
-            "name": "mouse_position",
-            "value": () => {
-              return window.mouse_canvas_position;
-            }
-          },
-          {
-            "type": "FLOAT",
-            "name": "max_amount",
-            "value": () => {
-              return window.last_max_amount
-            }
-          },
-          {
-            "type": "FLOAT",
-            "name": "max_transferable",
-            "value": () => {
-              return max_transferable ? max_transferable : 1.;
-            }
-          }
-          ],
-          "fragment": `
-precision highp float;
-precision highp int;
-
-#define UNIFORM_INSERTION_POINT
-
-varying vec2 vPosition;
-varying vec4 vUV;
-varying vec2 dims;
-
-#define PI 3.14159265359
-#define E 2.7182818284
-#define GR 1.61803398875
-#define flux(x) (vec3(cos(x),cos(4.0*PI/3.0+x),cos(2.0*PI/3.0+x))*.5+.5)
-
-float saw(float x)
-{
-    float f = mod(floor(abs(x)), 2.0);
-    float m = mod(abs(x), 1.0);
-    return f*(1.0-m)+(1.0-f)*m;
-}
-vec2 saw(vec2 x)
-{
-    return vec2(saw(x.x), saw(x.y));
-}
-
-void main()
-{
-    float border = 6.;
-    float edgeA = 0.;
-    float edgeB = 0.;
-    vec2 size = dims*vec2(width, height);
-    vec2 uv = vUV.xy*2.-1.;
-    vec2 uv2 = uv-vec2(-1., 1.)*border/size*2.;
-    uv = sign(uv)*pow(abs(uv), vec2(16.));
-    uv2 = sign(uv2)*pow(abs(uv2), vec2(16.));
-    edgeA = smoothstep(0., 1., 16.*((1.-border/length(size)-length(uv2))));
-    edgeB = smoothstep(0., 1., 16.*((1.-border/length(size)-length(uv))));
-    gl_FragColor = vec4(1.)*edgeA+vec4(flux(vUV.z*PI/3.).bgr, 1.)*(1.-edgeA)*edgeB;
-}`,
-          "vertex": `
-precision highp float;
-precision highp int;
-
-#define UNIFORM_INSERTION_POINT
-
-attribute highp vec4 vertex; 
-attribute highp vec4 color; 
-varying vec2 vPosition;
-varying vec4 vUV;
-varying vec2 dims;
-
-void main(void) {
-    vPosition = vertex.xy;
-    dims = vertex.zw;
-    vUV = color;
-    gl_Position = vec4(vPosition*2.-1., 0., 1.);
-}
-            `
-        },
+        "programs": [
         {
           "name": "payments-program",
           "uniforms": [{
@@ -1872,14 +1773,14 @@ void main(void) {
             "type": "VEC_TWO",
             "name": "mouse_position",
             "value": () => {
-              return window.mouse_canvas_position;
+              return mouse_canvas_position;
             }
           },
           {
             "type": "FLOAT",
             "name": "max_amount",
             "value": () => {
-              return window.last_max_amount
+              return last_max_amount
             }
           },
           {
@@ -1931,7 +1832,8 @@ void main()
     float border = 4.;
     float edge = 1.;
     vec2 pix = vUV.xy*dims*vec2(width, height);
-    if(pix.y <= border*2. || pix.y >= dims.y*height-border*2.) edge = 0.;
+    border = min(border, dims.y*height/8.);
+    if(pix.y <= border || pix.y >= dims.y*height-border) edge = 0.;
     vec3 payment_color = (vec3(208., 222., 234.)*(1.-vUV.w)+vUV.w*vec3(93., 200., 240.))/255.;
     gl_FragColor = vec4(payment_color  *edge+1.-edge, 1.);
 }`,
@@ -1967,30 +1869,11 @@ void main(void) {
             gl.clear(gl.COLOR_BUFFER_BIT);
             gl.enable(gl.BLEND);
             gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-            return window.final_payment_trapezoids
+            return final_payment_trapezoids
           },
           "indices": () => {
             var indices = []
-            var vertices = window.final_payment_trapezoids[0].flat();
-            for (var i = 0; i < vertices.length / 4; i++)
-              indices.push(i);
-            return indices
-          }
-        },
-        {
-          "name": "wealth-stage",
-          "type": "MESH_TRIANGLES",
-          "context": "image-context",
-          "program": "wealth-program",
-          "vertices": () => {
-            var gl = pipeline.getContext('image-context').gl
-            gl.disable(gl.DEPTH_TEST);
-            gl.disable(gl.BLEND);
-            return window.final_wealth_trapezoids
-          },
-          "indices": () => {
-            var indices = []
-            var vertices = window.final_wealth_trapezoids[0].flat();
+            var vertices = final_payment_trapezoids[0].flat();
             for (var i = 0; i < vertices.length / 4; i++)
               indices.push(i);
             return indices
@@ -2003,11 +1886,11 @@ void main(void) {
 
     var minCome = 0.0
 
-    window.pledgers = []
-    window.receivers = []
+    var pledgers = []
+    var receivers = []
 
-    window.user_counter = 1;
-    window.event_list = []
+    var user_counter = 1;
+    var event_list = []
 
     var EVENT_TYPES = {
       JOIN: "JOIN",
@@ -2019,8 +1902,8 @@ void main(void) {
     }
 
     function user_join_event(income_or_expenses) {
-      var user_index = window.user_counter++
-      window.event_list.push({
+      var user_index = user_counter++
+      event_list.push({
         type: EVENT_TYPES.JOIN,
         name: user_index,
         income: income_or_expenses
@@ -2028,15 +1911,15 @@ void main(void) {
     }
 
     function user_leave_event(user_name) {
-      window.event_list.push({
+      event_list.push({
         type: EVENT_TYPES.LEAVE,
         name: user_name
       })
-      document.getElementById('options_div').style.display = 'hidden'
+      window.hide_option()
     }
 
     function user_pay_event(from, to, amount) {
-      window.event_list.push({
+      event_list.push({
         type: EVENT_TYPES.PAYMENT,
         from,
         to,
@@ -2045,7 +1928,7 @@ void main(void) {
     }
 
     function user_change_income_event(user_name, income_or_expenses) {
-      window.event_list.push({
+      event_list.push({
         type: EVENT_TYPES.CHANGE_INCOME,
         name: user_name,
         income: income_or_expenses
@@ -2069,7 +1952,7 @@ void main(void) {
             return s;
           })
         ].flat(),
-        minimize: window.minimize
+        minimize: minimize
       })
     }
 
@@ -2085,29 +1968,31 @@ void main(void) {
 
     function clear_all() {
       document.getElementById("load_message").style.display = "block"
-      window.distribution_locked = false;
+      distribution_locked = false;
 
-      window.final_payment_trapezoids = []
-      window.final_wealth_trapezoids = []
+      final_payment_trapezoids = []
+      final_wealth_trapezoids = []
 
-      window.pledgers = []
-      window.receivers = []
-      window.event_list = []
-      window.user_counter = 1;
+      pledgers = []
+      receivers = []
+      event_list = []
+      user_counter = 1;
     }
 
-    window.mouse_page_position = [0, 0]
-    window.mouse_canvas_position = [0, 0]
-
+    var mouse_page_position = [0, 0]
+    var mouse_canvas_position = [0, 0]
+    var distribution_locked = false;
+    var minimize = true;
+    var last_distribution = []
     label_html = []
     label_positions = []
     total_html = [];
     total_positions = [];
 
-    window.pledger_clicked = null;
-    window.payment_clicked = null;
-    window.receiver_clicked = null;
-    window.mouse_busy = false;
+    var pledger_clicked = null;
+    var payment_clicked = null;
+    var receiver_clicked = null;
+    var mouse_busy = false;
 
     function vectors_are_colinear(vector_a, vector_b) {
       return Math.abs(vector_a[0] * vector_b[1] -
@@ -2136,7 +2021,7 @@ void main(void) {
 
       // Compute barycentric coordinates
       var b = (dot00 * dot11 - dot01 * dot01),
-        inv = b === 0 ? 0 : (1 / b),
+        inv = b == 0 ? 0 : (1 / b),
         u = (dot11 * dot02 - dot01 * dot12) * inv,
         v = (dot00 * dot12 - dot01 * dot02) * inv
       return !vectors_are_colinear([v0x, v0y], [v1x, v1y]) && u >= 0 && v >= 0 && (u + v < 1)
@@ -2154,12 +2039,12 @@ void main(void) {
       total_positions;
 
     function refresh_default_metrics() {
-      window.current_monthly_payments = []
+      current_monthly_payments = []
 
-      total_members = window.pledgers.length + window.receivers.length
+      total_members = pledgers.length + receivers.length
 
-      totalHave = window.pledgers.reduce((a, b) => a + b.last_income, 0)
-      totalNeed = window.receivers.reduce((a, b) => a + b.last_income, 0)
+      totalHave = pledgers.reduce((a, b) => a + b.last_income, 0)
+      totalNeed = receivers.reduce((a, b) => a + b.last_income, 0)
       max_wealth = Math.max(totalHave, totalNeed)
       spacer_scalar = 1.25;
       max_transferable = max_wealth * spacer_scalar
@@ -2171,43 +2056,44 @@ void main(void) {
       current_pledge = 0
       current_receive = 0
 
-      window.pledgers.forEach((a) => {
+      pledgers.forEach((a) => {
         a.vertical_height = 0;
       })
 
-      window.receivers.forEach((a) => {
+      receivers.forEach((a) => {
         a.vertical_height = 0;
       })
     }
 
     function get_pledger_or_receiver(name) {
-      for (var i = 0; i < window.pledgers.length; i++)
-        if (window.pledgers[i].name == name)
-          return window.pledgers[i]
-      for (var i = 0; i < window.receivers.length; i++)
-        if (window.receivers[i].name == name)
-          return window.receivers[i]
+      for (var i = 0; i < pledgers.length; i++)
+        if (pledgers[i].name == name)
+          return pledgers[i]
+      for (var i = 0; i < receivers.length; i++)
+        if (receivers[i].name == name)
+          return receivers[i]
       return undefined;
     }
 
     function parse_events() {
-      window.pledgers = []
-      window.receivers = []
-      var thread_safe_events = JSON.parse(JSON.stringify(window.event_list))
+      pledgers = []
+      receivers = []
+      distribution_events = []
+      var thread_safe_events = JSON.parse(JSON.stringify(event_list))
       event_parse_loop: for (var j = 0; j < thread_safe_events.length; j++) {
         var event = thread_safe_events[j];
 
         if (event.type == EVENT_TYPES.JOIN) {
           var income_or_expenses = event.income
           if (income_or_expenses > 0) {
-            window.pledgers.push({
+            pledgers.push({
               name: event.name,
               pledge: event.income,
               vertical_height: 0,
               trapezoids: []
             });
           } else {
-            window.receivers.push({
+            receivers.push({
               name: event.name,
               receive: Math.abs(event.income),
               vertical_height: 0,
@@ -2218,14 +2104,14 @@ void main(void) {
           user.last_income = Math.abs(event.income)
           user.income = event.income
         } else if (event.type == EVENT_TYPES.LEAVE) {
-          window.pledgers = window.pledgers.filter((v) => {
+          pledgers = pledgers.filter((v) => {
             return v.name != event.name
           })
-          window.receivers = window.receivers.filter((v) => {
+          receivers = receivers.filter((v) => {
             return v.name != event.name
           })
         } else if (event.type == EVENT_TYPES.PAYMENT) {
-          window.distribution_locked = true;
+          distribution_locked = true;
           var pledger = get_pledger_or_receiver(event.from);
           var receiver = get_pledger_or_receiver(event.to);
 
@@ -2236,7 +2122,7 @@ void main(void) {
             [1. - width, receiver.last_income, width, event.amount],
             [width, pledger.last_income, width, event.amount]
           ]
-          window.current_monthly_payments.push({
+          current_monthly_payments.push({
             from: event.from,
             to: event.to,
             amount: event.amount
@@ -2245,15 +2131,15 @@ void main(void) {
           var pledger_or_receiver = get_pledger_or_receiver(event.name);
           pledger_or_receiver.last_income = Math.abs(event.income)
         }
-        if (!window.distribution_locked && window.pledgers.length > 0 && window.receivers.length > 0) {
-          window.last_distribution = get_distribution(
-            window.pledgers.map((a, i) => {
+        if (!distribution_locked && pledgers.length > 0 && receivers.length > 0) {
+          last_distribution = get_distribution(
+            pledgers.map((a, i) => {
               return {
                 name: a.name,
                 haveNeed: a.last_income
               }
             }),
-            window.receivers.map((a, i) => {
+            receivers.map((a, i) => {
               return {
                 name: a.name,
                 haveNeed: a.last_income
@@ -2263,7 +2149,7 @@ void main(void) {
         }
       }
 
-      if (window.distribution_locked) {
+      if (distribution_locked) {
         document.getElementById("lock_message").style.display = 'inline-block'
       } else {
         document.getElementById("lock_message").style.display = 'none'
@@ -2323,13 +2209,11 @@ void main(void) {
       var texcoords = []
 
       var mouse_under = false;
-      for (  i = 0; i < window.pledgers.length; i++) {
-        var pledger = window.pledgers[i]
+      for (  i = 0; i < pledgers.length; i++) {
+        var pledger = pledgers[i]
 
         var avg_x = .5 / 3.;
         var avg_y = pledger.last_income / max_transferable / 2.
-
-        max_wealth = Math.max(pledger.last_income, max_wealth)
 
         let trapezoid = [
           [0, (current_pledge) / max_transferable, 1. / 3., pledger.last_income / max_transferable],
@@ -2337,43 +2221,30 @@ void main(void) {
           [1. / 3., (current_pledge + pledger.last_income) / max_transferable, 1. / 3., pledger.last_income / max_transferable],
           [0, (current_pledge + pledger.last_income) / max_transferable, 1. / 3., pledger.last_income / max_transferable]
         ]
-        let vUV = [
-          [0, 0, i, 0],
-          [1, 0, i, 0],
-          [1, 1, i, 1],
-          [0, 1, i, 1]
-        ]
 
-        vertices.push(mesh_trapezoid(trapezoid));
-        texcoords.push(mesh_trapezoid(vUV));
         label_html.push("<font1>User " + pledger.name + " Pledged</font1><br>" + "<font2>Pledged $" + pledger.last_income + "</font2><br>");
-        label_positions.push([avg_x, current_pledge / max_transferable + avg_y])
-        
-        /* Further reduction possible:
-        if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
-          point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
+        label_positions.push([avg_x, current_pledge / max_transferable + avg_y, 1./3., (pledger.last_income) / max_transferable])
+
+        if (point_in_triangle(mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
+          point_in_triangle(mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
           mouse_under = true;
-          window.pledger_clicked = function (pledger) {
+          pledger_clicked = function (pledger) {
             return function () {
               var change_pledge = `
-					  	<label style="display:inline-block;">Amount:</label>
-						<input id="pledge_amount" type="number" value="` + pledger.last_income + `" step="1" style="display:inline-block; width:64px">`
+              <label style="display:inline-block;">Amount:</label>
+            <input id="pledge_amount" type="number" value="` + pledger.last_income + `" step="1" style="display:inline-block; width:64px">`
 
-              window.show_option("User" + pledger.name + ":<br>" + change_pledge +
-                "<button onclick=\"user_change_income_event(\'" + pledger.name + "\', parseFloat(document.getElementById(\'pledge_amount\').value))\">Set Income</button>" +
+              show_option("User" + pledger.name + ":" +
                 "<br><button onclick=\"user_leave_event(\'" + pledger.name + "\')\">Make Leave</button>");
             }
           }(pledger)
         }
-        */
         pledger.vertical_height += current_pledge / max_transferable
 
         current_pledge += pledger.last_income * spacer_scalar
       }
       if (!mouse_under)
-        window.pledger_clicked = null;
-
-      return [vertices.flat(), texcoords.flat()];
+        pledger_clicked = null;
     }
 
     function receivers_geometry() {
@@ -2381,66 +2252,50 @@ void main(void) {
       var texcoords = []
 
       var mouse_under = false;
-      for (  i = 0; i < window.receivers.length; i++) {
-        var receiver = window.receivers[i]
+      for (i = 0; i < receivers.length; i++) {
+        var receiver = receivers[i]
 
         var avg_x = 2.5 / 3.;
         var avg_y = receiver.last_income / max_transferable / 2.
-
-        max_wealth = Math.max(receiver.last_income, max_wealth)
-
         let trapezoid = [
           [1, (current_receive) / max_transferable, 1. / 3., receiver.last_income / max_transferable],
           [2. / 3., (current_receive) / max_transferable, 1. / 3., receiver.last_income / max_transferable],
           [2. / 3., (current_receive + receiver.last_income) / max_transferable, 1. / 3., receiver.last_income / max_transferable],
           [1, (current_receive + receiver.last_income) / max_transferable, 1. / 3., receiver.last_income / max_transferable]
         ]
-        var index = i+window.pledgers.length
-        let vUV = [
-          [1, 0, index, 0],
-          [0, 0, index, 0],
-          [0, 1, index, 1],
-          [1, 1, index, 1]
-        ]
 
-        vertices.push(mesh_trapezoid(trapezoid));
-        texcoords.push(mesh_trapezoid(vUV));
         label_html.push("<font1>User " + receiver.name + " Receives</font1><br>" + "<font2>Receives $" + receiver.last_income + "</font2><br>");
-        label_positions.push([avg_x, current_receive / max_transferable + avg_y])
-        /* Further reduction possible:
-        if (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
-          point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
+        label_positions.push([avg_x, current_receive / max_transferable + avg_y, 1./3., (receiver.last_income) / max_transferable])
+
+        if (point_in_triangle(mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
+          point_in_triangle(mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
           mouse_under = true;
-          window.receiver_clicked = function (receiver) {
+          receiver_clicked = function (receiver) {
             return function () {
               var change_receive = `
 					  	<label style="display:inline-block;">Amount:</label>
 						<input id="receive_amount" type="number" value="` + receiver.last_income + `" step="1" style="display:inline-block; width:64px">`
 
-              window.show_option("User" + receiver.name + ":<br>" + change_receive +
-                "<button onclick=\"user_change_income_event(\'" + receiver.name + "\', parseFloat(document.getElementById(\'receive_amount\').value))\">Set Income</button>" +
+              show_option("User" + receiver.name + ":" +
                 "<br><button onclick=\"user_leave_event(\'" + receiver.name + "\')\">Make Leave</button>");
             }
           }(receiver)
         }
-        */
         receiver.vertical_height += current_receive / max_transferable
         current_receive += receiver.last_income * spacer_scalar
       }
       if (!mouse_under)
-        window.receiver_clicked = null;
-
-      return [vertices.flat(), texcoords.flat()];
+        receiver_clicked = null;
     }
 
     function payments_geometry() {
-      window.payment_message = ""
+      payment_message = ""
       var vertices = []
       var texcoords = []
 
-      var distribution = [window.current_monthly_payments, adjustedDistribution({
-        distribution: window.last_distribution ? window.last_distribution : [],
-        payments: window.current_monthly_payments,
+      var distribution = [current_monthly_payments, adjustedDistribution({
+        distribution: last_distribution ? last_distribution : [],
+        payments: current_monthly_payments,
         dueOn: 0
       })].flat();
 
@@ -2448,8 +2303,8 @@ void main(void) {
       for (var i = 0; i < distribution.length; i++) {
         var payment = distribution[i]
 
-        var pledger = window.pledgers.find((v) => v.name == payment.from)
-        var receiver = window.receivers.find((v) => v.name == payment.to)
+        var pledger = pledgers.find((v) => v.name == payment.from)
+        var receiver = receivers.find((v) => v.name == payment.to)
 
         if (!pledger || !receiver) {
           continue
@@ -2461,7 +2316,7 @@ void main(void) {
           [2. / 3., receiver.vertical_height + payment.amount / max_transferable, 1. / 3., payment.amount / max_transferable],
           [1. / 3., pledger.vertical_height + payment.amount / max_transferable, 1. / 3., payment.amount / max_transferable]
         ]
-        var complete = i < window.current_monthly_payments.length ? 1 : 0;
+        var complete = i < current_monthly_payments.length ? 1 : 0;
         let vUV = [
           [0, 0, 0, complete],
           [1, 0, 0, complete],
@@ -2477,22 +2332,22 @@ void main(void) {
         texcoords.push(mesh_trapezoid(vUV));
         pledger.vertical_height += payment.amount / max_transferable;
         receiver.vertical_height += payment.amount / max_transferable;
-        if (!complete && (point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
-          point_in_triangle(window.mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]]))) {
+        if (!complete && (point_in_triangle(mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
+          point_in_triangle(mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]]))) {
           mouse_under = true;
 
           var make_payment = `<label style="display:inline-block;">Amount:</label>
 									<input id="payment_amount` + i + `" type="number" value="` + payment.amount + `" max="` + payment.amount + `"step="1" style="display:inline-block; width:64px">`
-          window.payment_message += (window.payment_message ? "<br>" : "") + "Payment from User" + payment.from + " to User" + payment.to + "<br>" + make_payment +
-            "<button onclick=\"document.getElementById('options_div').style.display='hidden'; window.hide_option(); user_pay_event(\'" + payment.from + "\', \'" + payment.to + "\', parseFloat(document.getElementById('payment_amount" + i + "').value))\">Make Payment</button>"
+          payment_message += (payment_message ? "<br>" : "") + "Payment from User" + payment.from + " to User" + payment.to + "<br>" + make_payment +
+            "<button onclick=\"document.getElementById('options_div').style.display='hidden'; hide_option(); user_pay_event(\'" + payment.from + "\', \'" + payment.to + "\', parseFloat(document.getElementById('payment_amount" + i + "').value))\">Make Payment</button>"
 
-          window.payment_clicked = function () {
-            window.show_option(window.payment_message);
+          payment_clicked = function () {
+            show_option(payment_message);
           }
         }
       }
       if (!mouse_under)
-        window.payment_clicked = null;
+        payment_clicked = null;
 
       return [vertices.flat(), texcoords.flat()];
     }
@@ -2500,22 +2355,22 @@ void main(void) {
     window.renderLoop = () => {
       refresh_default_metrics();
       parse_events();
-      var geometry = [pledgers_geometry(), receivers_geometry(), payments_geometry()]
 
-      window.final_wealth_trapezoids = [
-        [geometry[0][0], geometry[1][0]].flat(), [geometry[0][1], geometry[1][1]].flat()
-      ]
-      window.final_payment_trapezoids = [
-        [geometry[2][0]].flat(), [geometry[2][1]].flat()
+      receivers_geometry()
+      pledgers_geometry()
+      var geometry = [payments_geometry()]
+
+      final_payment_trapezoids = [
+        [geometry[0][0]].flat(), [geometry[0][1]].flat()
       ]
 
       if (window.show_labels) window.show_labels()
 
-      window.last_max_amount = max_transferable;
+      last_max_amount = max_transferable;
     }
     window.onload = () => {
 
-      window.reload_algorithm()
+      reload_algorithm()
 
       var canvas = pipeline.contexts[pipeline.contexts.length - 1].canvas;
 
@@ -2532,16 +2387,16 @@ void main(void) {
       window.addEventListener('resize', res);
 
       function onmousemove(e) {
-        window.mouse_page_position = [e.pageX, e.pageY]
-        window.mouse_canvas_position = [e.pageX / canvas_div.offsetWidth, 1. - (e.pageY - canvas_div.offsetTop) / canvas_div.offsetHeight]
+        mouse_page_position = [e.pageX, e.pageY]
+        mouse_canvas_position = [(e.pageX - canvas_div.offsetLeft) / canvas_div.offsetWidth, 1. - (e.pageY - canvas_div.offsetTop) / canvas_div.offsetHeight]
       };
       canvas_div.onmousemove = onmousemove
       canvas_div.onmouseup = function (e) {
-        if (window.mouse_busy) return;
+        if (mouse_busy) return;
 
-        if (window.pledger_clicked) window.pledger_clicked()
-        else if (window.payment_clicked) window.payment_clicked()
-        else if (window.receiver_clicked) window.receiver_clicked()
+        if (pledger_clicked) pledger_clicked()
+        else if (payment_clicked) payment_clicked()
+        else if (receiver_clicked) receiver_clicked()
         else {
           hide_option()
         }
@@ -2550,17 +2405,17 @@ void main(void) {
       var label_div = document.getElementById("label_div")
 
       options_div.onmouseenter = function (e) {
-        window.mouse_busy = true;
+        mouse_busy = true;
       }
       options_div.onmouseleave = function (e) {
-        window.mouse_busy = false;
+        mouse_busy = false;
       }
 
       window.show_option = (html) => {
         options_div.style.display = "block"
         options_div.innerHTML = html;
-        options_div.style.top = (window.mouse_page_position[1] - canvas_div.offsetTop) + "px";
-        options_div.style.left = (window.mouse_page_position[0] - options_div.offsetWidth / 2.) + "px";
+        options_div.style.top = (mouse_page_position[1] - canvas_div.offsetTop) + "px";
+        options_div.style.left = (mouse_page_position[0] - options_div.offsetWidth / 2.) + "px";
       }
       window.hide_option = () => {
         options_div.style.display = "none"
@@ -2570,7 +2425,9 @@ void main(void) {
           var html = label_html.reduce((acc, html, index) => {
             var x = Math.floor(label_positions[index][0] * canvas_div.offsetWidth)
             var y = Math.floor((1. - label_positions[index][1]) * canvas_div.offsetHeight)
-            return acc + '<div style="transform:translate(-50%,-50%); position:absolute; display:block; left: ' + x + 'px; top: ' + y + 'px; color: #000 !important; background: #fff; border: 1px solid #FFFFFF;"class="label_div">' + html + '</div>'
+            var w = Math.floor(label_positions[index][2] * canvas_div.offsetWidth)
+            var h = Math.floor((label_positions[index][3]) * canvas_div.offsetHeight)
+            return acc + '<div style="transform:translate(-50%,-50%); position:absolute; text-align:center; display:block; left: ' + x + 'px; top: ' + y + 'px;  width: ' + w + 'px; height: ' + h + 'px; color: #000 !important; background: #fff; border: 1px solid #000;"class="label_div">' + html + '</div>'
           }, "")
           html += total_html.reduce((acc, html, index) => {
             var x = Math.floor(total_positions[index][0] * canvas_div.offsetWidth)
@@ -2587,19 +2444,11 @@ void main(void) {
       }
 
       function onmousemove(e) {
-        window.mouse_page_position = [e.pageX, e.pageY]
-        window.mouse_canvas_position = [e.pageX / canvas_div.offsetWidth, 1. - (e.pageY - canvas_div.offsetTop) / canvas_div.offsetHeight]
+        mouse_page_position = [e.pageX, e.pageY]
+        mouse_canvas_position = [(e.pageX - canvas_div.offsetLeft) / canvas_div.offsetWidth, 1. - (e.pageY - canvas_div.offsetTop) / canvas_div.offsetHeight]
       };
       canvas_div.onmousemove = onmousemove
       window.hide_option()
-    }
-    window.minimize = true;
-    window.toggle_minimize = () => {
-      if (window.distribution_locked) return;
-      var button = document.getElementById("minimize");
-      var onOff = button.innerHTML == "Minimize";
-      window.minimize = onOff;
-      button.innerHTML = onOff ? "Unminimize" : "Minimize";
     }
   </script>
 </head>

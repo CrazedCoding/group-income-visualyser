@@ -2074,7 +2074,6 @@ user-scalable=no">
   </script>
   <script type="text/javascript">
     var algorithm = {
-      "public": true,
       "pipeline": {
         "contexts": [{
           "name": "image-context",
@@ -2085,104 +2084,7 @@ user-scalable=no">
             "type": "NEXT_HIGHEST_POWER_OF_TWO"
           }
         }],
-        "programs": [{
-          "name": "wealth-program",
-          "uniforms": [{
-            "type": "FLOAT",
-            "name": "width",
-            "value": () => {
-              return pipeline.getContext('image-context').canvas.width;
-            }
-          },
-          {
-            "type": "FLOAT",
-            "name": "height",
-            "value": () => {
-              return pipeline.getContext('image-context').canvas.height;
-            }
-          },
-          {
-            "type": "VEC_TWO",
-            "name": "mouse_position",
-            "value": () => {
-              return mouse_canvas_position;
-            }
-          },
-          {
-            "type": "FLOAT",
-            "name": "max_amount",
-            "value": () => {
-              return last_max_amount
-            }
-          },
-          {
-            "type": "FLOAT",
-            "name": "max_transferable",
-            "value": () => {
-              return max_transferable ? max_transferable : 1.;
-            }
-          }
-          ],
-          "fragment": `
-precision highp float;
-precision highp int;
-
-#define UNIFORM_INSERTION_POINT
-
-varying vec2 vPosition;
-varying vec4 vUV;
-varying vec2 dims;
-
-#define PI 3.14159265359
-#define E 2.7182818284
-#define GR 1.61803398875
-#define flux(x) (vec3(cos(x),cos(4.0*PI/3.0+x),cos(2.0*PI/3.0+x))*.5+.5)
-
-float saw(float x)
-{
-    float f = mod(floor(abs(x)), 2.0);
-    float m = mod(abs(x), 1.0);
-    return f*(1.0-m)+(1.0-f)*m;
-}
-vec2 saw(vec2 x)
-{
-    return vec2(saw(x.x), saw(x.y));
-}
-
-void main()
-{
-    float border = 6.;
-    float edgeA = 0.;
-    float edgeB = 0.;
-    vec2 size = dims*vec2(width, height);
-    vec2 uv = vUV.xy*2.-1.;
-    vec2 uv2 = uv-vec2(-1., 1.)*border/size*2.;
-    uv = sign(uv)*pow(abs(uv), vec2(16.));
-    uv2 = sign(uv2)*pow(abs(uv2), vec2(16.));
-    edgeA = smoothstep(0., 1., 16.*((1.-border/length(size)-length(uv2))));
-    edgeB = smoothstep(0., 1., 16.*((1.-border/length(size)-length(uv))));
-    gl_FragColor = vec4(1.)*edgeA+vec4(flux(vUV.z*PI/3.).bgr, 1.)*(1.-edgeA)*edgeB;
-}`,
-          "vertex": `
-precision highp float;
-precision highp int;
-
-#define UNIFORM_INSERTION_POINT
-
-attribute highp vec4 vertex; 
-attribute highp vec4 color; 
-varying vec2 vPosition;
-varying vec4 vUV;
-varying vec2 dims;
-
-void main(void) {
-    vPosition = vertex.xy;
-    dims = vertex.zw;
-    vUV = color;
-    gl_Position = vec4(vPosition*2.-1., 0., 1.);
-}
-            `
-        },
+        "programs": [
         {
           "name": "payments-program",
           "uniforms": [{
@@ -2304,25 +2206,6 @@ void main(void) {
           "indices": () => {
             var indices = []
             var vertices = final_payment_trapezoids[0].flat();
-            for (var i = 0; i < vertices.length / 4; i++)
-              indices.push(i);
-            return indices
-          }
-        },
-        {
-          "name": "wealth-stage",
-          "type": "MESH_TRIANGLES",
-          "context": "image-context",
-          "program": "wealth-program",
-          "vertices": () => {
-            var gl = pipeline.getContext('image-context').gl
-            gl.disable(gl.DEPTH_TEST);
-            gl.disable(gl.BLEND);
-            return final_wealth_trapezoids
-          },
-          "indices": () => {
-            var indices = []
-            var vertices = final_wealth_trapezoids[0].flat();
             for (var i = 0; i < vertices.length / 4; i++)
               indices.push(i);
             return indices
@@ -2646,25 +2529,15 @@ void main(void) {
         var avg_x = .5 / 3.;
         var avg_y = pledger.last_income / max_transferable / 2.
 
-        max_wealth = Math.max(pledger.last_income, max_wealth)
-
         let trapezoid = [
           [0, (current_pledge) / max_transferable, 1. / 3., pledger.last_income / max_transferable],
           [1. / 3., (current_pledge) / max_transferable, 1. / 3., pledger.last_income / max_transferable],
           [1. / 3., (current_pledge + pledger.last_income) / max_transferable, 1. / 3., pledger.last_income / max_transferable],
           [0, (current_pledge + pledger.last_income) / max_transferable, 1. / 3., pledger.last_income / max_transferable]
         ]
-        let vUV = [
-          [0, 0, i, 0],
-          [1, 0, i, 0],
-          [1, 1, i, 1],
-          [0, 1, i, 1]
-        ]
 
-        vertices.push(mesh_trapezoid(trapezoid));
-        texcoords.push(mesh_trapezoid(vUV));
         label_html.push("<font1>User " + pledger.name + " Pledged</font1><br>" + "<font2>Pledged $" + pledger.last_income + "</font2><br>");
-        label_positions.push([avg_x, current_pledge / max_transferable + avg_y])
+        label_positions.push([avg_x, current_pledge / max_transferable + avg_y, 1./3., (pledger.last_income) / max_transferable])
 
         if (point_in_triangle(mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
           point_in_triangle(mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
@@ -2686,8 +2559,6 @@ void main(void) {
       }
       if (!mouse_under)
         pledger_clicked = null;
-
-      return [vertices.flat(), texcoords.flat()];
     }
 
     function receivers_geometry() {
@@ -2700,27 +2571,16 @@ void main(void) {
 
         var avg_x = 2.5 / 3.;
         var avg_y = receiver.last_income / max_transferable / 2.
-
-        max_wealth = Math.max(receiver.last_income, max_wealth)
-
         let trapezoid = [
           [1, (current_receive) / max_transferable, 1. / 3., receiver.last_income / max_transferable],
           [2. / 3., (current_receive) / max_transferable, 1. / 3., receiver.last_income / max_transferable],
           [2. / 3., (current_receive + receiver.last_income) / max_transferable, 1. / 3., receiver.last_income / max_transferable],
           [1, (current_receive + receiver.last_income) / max_transferable, 1. / 3., receiver.last_income / max_transferable]
         ]
-        var index = i+window.pledgers.length
-        let vUV = [
-          [1, 0, index, 0],
-          [0, 0, index, 0],
-          [0, 1, index, 1],
-          [1, 1, index, 1]
-        ]
 
-        vertices.push(mesh_trapezoid(trapezoid));
-        texcoords.push(mesh_trapezoid(vUV));
         label_html.push("<font1>User " + receiver.name + " Receives</font1><br>" + "<font2>Receives $" + receiver.last_income + "</font2><br>");
-        label_positions.push([avg_x, current_receive / max_transferable + avg_y])
+        label_positions.push([avg_x, current_receive / max_transferable + avg_y, 1./3., (receiver.last_income) / max_transferable])
+
         if (point_in_triangle(mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
           point_in_triangle(mouse_canvas_position, [trapezoid[0], trapezoid[3], trapezoid[2]])) {
           mouse_under = true;
@@ -2740,8 +2600,6 @@ void main(void) {
       }
       if (!mouse_under)
         receiver_clicked = null;
-
-      return [vertices.flat(), texcoords.flat()];
     }
 
     function payments_geometry() {
@@ -2807,13 +2665,13 @@ void main(void) {
     window.renderLoop = () => {
       refresh_default_metrics();
       parse_events();
-      var geometry = [pledgers_geometry(), receivers_geometry(), payments_geometry()]
 
-      final_wealth_trapezoids = [
-        [geometry[0][0], geometry[1][0]].flat(), [geometry[0][1], geometry[1][1]].flat()
-      ]
+      receivers_geometry()
+      pledgers_geometry()
+      var geometry = [payments_geometry()]
+
       final_payment_trapezoids = [
-        [geometry[2][0]].flat(), [geometry[2][1]].flat()
+        [geometry[0][0]].flat(), [geometry[0][1]].flat()
       ]
 
       if (window.show_labels) window.show_labels()
@@ -2877,7 +2735,9 @@ void main(void) {
           var html = label_html.reduce((acc, html, index) => {
             var x = Math.floor(label_positions[index][0] * canvas_div.offsetWidth)
             var y = Math.floor((1. - label_positions[index][1]) * canvas_div.offsetHeight)
-            return acc + '<div style="transform:translate(-50%,-50%); position:absolute; display:block; left: ' + x + 'px; top: ' + y + 'px; color: #000 !important; background: #fff; border: 1px solid #FFFFFF;"class="label_div">' + html + '</div>'
+            var w = Math.floor(label_positions[index][2] * canvas_div.offsetWidth)
+            var h = Math.floor((label_positions[index][3]) * canvas_div.offsetHeight)
+            return acc + '<div style="transform:translate(-50%,-50%); position:absolute; text-align:center; display:block; left: ' + x + 'px; top: ' + y + 'px;  width: ' + w + 'px; height: ' + h + 'px; color: #000 !important; background: #fff; border: 1px solid #000;"class="label_div">' + html + '</div>'
           }, "")
           html += total_html.reduce((acc, html, index) => {
             var x = Math.floor(total_positions[index][0] * canvas_div.offsetWidth)
