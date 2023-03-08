@@ -2435,7 +2435,19 @@ void main(void) {
             var y = Math.floor((1. - label_positions[index][1]) * canvas_div.offsetHeight)
             var w = Math.floor(label_positions[index][2] * canvas_div.offsetWidth)
             var h = Math.floor((label_positions[index][3]) * canvas_div.offsetHeight)
-            return acc + '<div class="wealth_div" style="transform:translate(-50%,-50%); position:absolute; text-align:center; display:block; left: ' + x + 'px; top: ' + y + 'px;  width: ' + w + 'px; height: ' + h + 'px; color: #000 !important; background: #fff; border: 1px solid #000;"class="label_div">' + html + '</div>'
+
+            var omega = index/Math.PI*2.
+            var r = (Math.cos(omega)*.5+.5)*255;
+            var g = (Math.cos(omega+Math.PI*2./3.)*.5+.5)*255;
+            var b = (Math.cos(omega+Math.PI*4./3.)*.5+.5)*255;
+
+            r = new Number(r).toFixed(3)
+            g = new Number(g).toFixed(3)
+            b = new Number(b).toFixed(3)
+
+            var rgba = 'rgba('+r+', '+g+', '+b+', 255.0)'
+
+            return acc + '<div class="wealth_div" style="box-shadow: 4px 4px 0px '+rgba+'; transform:translate(-50%,-50%); position:absolute; text-align:center; display:block; left: ' + x + 'px; top: ' + y + 'px;  width: ' + w + 'px; height: ' + h + 'px; color: #000 !important; background: #fff; border: 1px solid #D0DEEA;"class="label_div">' + html + '</div>'
           }, "")
           html += total_html.reduce((acc, html, index) => {
             var x = Math.floor(total_positions[index][0] * canvas_div.offsetWidth)
