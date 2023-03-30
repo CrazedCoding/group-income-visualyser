@@ -1,292 +1,57 @@
+<!DOCTYPE html>
 <html>
-  <head>
+<head>
+  <title>Group Income Simulator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <style type="text/css">
-    @font-face {
-      src: url(./fonts/Poppins/Poppins-Medium.ttf);
-      font-family: "Poppins";
-      font-weight: 500;
-    }
+  <link rel="icon" type="image/svg+xml" href="favicon.ico">
+  <link rel="stylesheet" href="style.css">
+</head>
 
-    @font-face {
-      src: url(./fonts/Poppins/Poppins-SemiBold.ttf);
-      font-family: "Poppins";
-      font-weight: 600;
-    }
+<body>
+  <div class="gis_layout">
+    <header class="gis_wrapper gis_header_wrapper">
+      <div class="gis_logo">
+        <img src="./images/logo.svg">
+        <h1 class="gis_logo_label">Simulator</h1>
+      </div>
+      <button class="gis_logo_button button" onclick="clear_all()">Reset</button>
+    </header>
+    <div id="body" class="gis_main gis_wrapper">
+      <p class="gis_instruction" id="load_message">
+        Group income makes it easy for small communities to voluntarily provide a financial safety net for their
+        members.
+        <br>
+        <br>
+        Members of the group can contribute with monetary (pledges) or non-monetary donations, securing everyone in your
+        group with a basic income.
+        <br>
+        <br>
+        Start adding members to see how it works.
+      </p>
 
-    @font-face {
-      src: url(./fonts/Poppins/Poppins-Bold.ttf);
-      font-family: "Poppins";
-      font-weight: 700;
-    }
+      <div id="canvas_div">
+        <div style="width:100%; height: 100%; position: absolute;" id="label_div">
+        </div>
+        <div id="options_div">
+        </div>
+      </div>
+    </div>
+    <footer class="gis_footer">
+      <div class="gis_footer_wrapper gis_wrapper">
+        <div class="gis_buttons" onclick="add_pledger()">Add Pledger</div>
+        <div class="gis_input_wrapper">
+          <div class="gis_input_field">
+            <label class="gis_input_label">Amount:</label>
+            <input id="amount" class="gis_amount" type="number" value="10" min="0" step="1"/>
+          </div>
+          <label class="gis_currency">$ USD</label>
+        </div>
+        <div class="gis_buttons" onclick="add_receiver()">Add Receiver</div>
+      </div>
+    </footer>
+  </div>
 
-    @font-face {
-      src: url(./fonts/Poppins/Poppins-Regular.ttf);
-      font-family: "Poppins";
-      font-weight: 400;
-    }
-
-    @font-face {
-      src: url(./fonts/Lato/Lato-Bold.ttf);
-      font-family: "Lato";
-      font-weight: 700;
-    }
-
-    @font-face {
-      src: url(./fonts/Lato/Lato-Regular.ttf);
-      font-family: "Lato";
-      font-weight: 400;
-    }
-    
-    body,
-    html {
-      font-family: 'Poppins';
-      font-weight: 500;
-      height: 100%;
-      width: 100%;
-      background-color: #E5E5E5;
-      color: #fff;
-      margin: 0px;
-    }
-
-    .gis_layout input {
-      border: none;
-      font-size: 16px;
-    }
-
-    .gis_layout {
-      display: grid;
-      grid-template-rows: 100px 1fr 100px;
-      height: 100%;
-    }
-
-    .gis_wrapper {
-      width: 1092px;
-      max-width: calc(100vw - 32px);
-      margin: 0 auto;
-    }
-
-    .gis_main {
-      overflow: scroll;
-    }
-
-    font1 {
-      font-family: 'Poppins';
-      font-style: normal;
-      font-weight: 500;
-      font-size: 14px;
-      line-height: 21px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-
-    font2 {
-      font-family: 'Poppins';
-      font-style: normal;
-      font-weight: 600;
-      font-size: 16px;
-      line-height: 24px;
-    }
-
-    /* button { */
-      /* font-family: 'Lato';
-      font-style: normal;
-      font-weight: 700;
-      font-size: 14px;
-      vertical-align: middle;
-      background-color: #3B405C !important; */
-      /* color: #fff !important; */
-      /* border-width: 3px !important;
-      border-radius: 0px !important;
-      border-color: #77f; */
-    /* } */
-
-    /* label {
-      background-color: #fff !important;
-      color: #000 !important;
-    } */
-
-    /* button:hover {
-      cursor: pointer;
-      background-color: #fff !important;
-      color: #000 !important;
-    } */
-
-    /* label {
-      padding: 3px;
-      border: 1px solid #77f;
-    } */
-
-    .label_div {
-      width: fit-content;
-      top: 50%;
-      position: relative;
-      transform: translate(0%, -50%)
-    }
-
-    #options_div {
-      color: #000;
-      border: 3px solid black;
-      border-radius: 3px;
-      position: absolute;
-      background-color: #fff;
-      text-align: center;
-      z-index: 10;
-    }
-
-    #controls_div>button {
-      font-size: 24px !important;
-    }
-
-    #controls_div {
-      margin-bottom: 24px !important;
-    }
-
-    .header_wrapper {
-      margin: 0px auto;
-      height: 100px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-    }
-
-    #canvas_div {
-      position: relative;
-      width: 100%;
-      height: 70%;
-    }
-
-    #image-context {
-      z-index: 2 !important;
-      height: 100% !important;
-    }
-
-    #bottom_div {
-      position: absolute;
-      width: 100%;
-      height: 93px;
-      bottom: 0px;
-    }
-
-    .gis_input_wrapper {
-      background: #FFFFFF;
-      border: 1px solid #DBDBDB;
-      border-radius: 4px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      padding: 0 16px;
-      color: #363636;
-      font-size: 16px;
-      font-family: 'Lato';
-    }
-
-    .gis_input_field {
-      display: flex;
-    }
-    
-    .gis_input_label {
-      font-size: 14px;
-      margin-right: 16px;
-      line-height: 22px;
-      font-weight: 700;
-    }
-
-    p {
-      color: #000;
-      font-family: 'Poppins';
-      font-style: normal;
-      font-weight: 400;
-      font-size: 18px;
-      margin-left: 25%;
-      margin-right: 25%;
-      margin-top: 5.0%;
-      text-align: center;
-    }
-
-    .logo_image {}
-
-    .logo_label {
-      /* About */
-      font-family: 'Poppins';
-      font-style: normal;
-      font-weight: 500;
-      font-size: 16px;
-      top: 6px;
-      text-transform: uppercase;
-      margin-left: 8px;
-
-      color: #363636;
-      /* About */
-      vertical-align: middle;
-    }
-
-    .logo_button {}
-
-    .button {}
-
-    .wealth_div {
-      z-index: 10;
-      background: #FFFFFF;
-      border: 1px solid #D0DEEA;
-      border-radius: 4px;
-      box-shadow: 4px 4px 0px
-    }
-
-    .pledger_div {}
-
-    .receiver_div {}
-
-    .distribution_div {
-      color: #fff;
-      background: #3E4462;
-      border: 1px solid #FFFFFF;
-      z-index: 10;
-      padding: 3px !important;
-      border-radius: 6px;
-      position: absolute;
-      text-align: left;
-    }
-
-    .gis_footer_wrapper {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 100%;
-      gap: 16px;
-    }
-
-    .gis_buttons {
-      display: flex;
-      flex-direction: row;
-      justify-content: center;
-      align-items: center;
-      height: 48px;
-      max-width: 340px;
-      text-align: center;
-      width: 100%;
-      background-color: #0288D1;
-      border: 1px solid #0288D1;
-      border-radius: 4px;
-      font-family: 'Lato';
-      font-style: normal;
-      font-weight: 800;
-      font-size: 16px;
-      line-height: 20px;
-    }
-
-    .gis_currency {
-      color: #707070;
-      width: 50px;
-      text-align: right;
-    }
-
-    /* Para */
-  </style>
+  <!-- Add Javascript at the end to load faster -->
   <script type="text/javascript">
     /* https://github.com/okTurtles/group-income/blob/master/contracts/0.0.9/group.js */
     // frontend/model/contracts/misc/flowTyper.js
@@ -2174,6 +1939,7 @@
     }
   </script>
   <script type="text/javascript">
+    let body = document.getElementById("body")
     String.prototype.hashCode = function () {
       var hash = 0,
         i, chr;
@@ -2401,18 +2167,22 @@ void main(void) {
       })
     }
 
+    function toggleCanvas(show) {
+      body.classList[show ? 'add' : 'remove']('show_canvas')
+    }
+
     function add_pledger() {
       user_join_event(get_amount())
-      document.getElementById("load_message").style.display = "none"
+      toggleCanvas(true)
     }
 
     function add_receiver() {
       user_join_event(-get_amount())
-      document.getElementById("load_message").style.display = "none"
+      toggleCanvas(true)
     }
 
     function clear_all() {
-      document.getElementById("load_message").style.display = "block"
+      toggleCanvas(false)
       final_payment_trapezoids = []
       final_wealth_trapezoids = []
 
@@ -2649,7 +2419,7 @@ void main(void) {
           [0, (current_pledge + pledger.last_income) / max_transferable, 1. / 3., pledger.last_income / max_transferable]
         ]
 
-        label_html.push("<font1>User " + pledger.name + " Pledged</font1><br>" + "<font2>Pledged $" + pledger.last_income + "</font2><br>");
+        label_html.push("<div class='gis_user_wrapper'><div class='gis_user_name'>User " + pledger.name + " Pledged</div>" + "Pledged $" + pledger.last_income + "</div>");
         label_positions.push([avg_x, current_pledge / max_transferable + avg_y, 1. / 3., (pledger.last_income) / max_transferable])
 
         if (point_in_triangle(mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
@@ -2690,8 +2460,7 @@ void main(void) {
           [2. / 3., (current_receive + receiver.last_income) / max_transferable, 1. / 3., receiver.last_income / max_transferable],
           [1, (current_receive + receiver.last_income) / max_transferable, 1. / 3., receiver.last_income / max_transferable]
         ]
-
-        label_html.push("<font1>User " + receiver.name + " Receives</font1><br>" + "<font2>Receives $" + receiver.last_income + "</font2><br>");
+        label_html.push("<div class='gis_user_wrapper'><div class='gis_user_name'>User " + receiver.name + " Receives</div>" + "Receives $" + receiver.last_income + "</div>");
         label_positions.push([avg_x, current_receive / max_transferable + avg_y, 1. / 3., (receiver.last_income) / max_transferable])
 
         if (point_in_triangle(mouse_canvas_position, [trapezoid[0], trapezoid[1], trapezoid[2]]) ||
@@ -2898,50 +2667,5 @@ void main(void) {
       window.hide_option()
     }
   </script>
-</head>
-
-<body>
-  <div class="gis_layout">
-    <header class="gis_wrapper header_wrapper">
-      <div class="logo">
-        <img class="logo_image" src="./logo.svg">
-        <h1 class="logo_label">Simulator</h1>
-      </div>
-      <button class="logo_button button" onclick="clear_all()">Reset</button>
-    </header>
-    <div class="gis_main gis_wrapper">
-      <div id="canvas_div">
-        <div style="width:100%; height: 100%; position: absolute;" id="label_div">
-        </div>
-        <div id="options_div">
-        </div>
-      </div>
-      <p id="load_message">
-        Group income makes it easy for small communities to voluntarily provide a financial safety net for their
-        members.
-        <br>
-        <br>
-        Members of the group can contribute with monetary (pledges) or non-monetary donations, securing everyone in your
-        group with a basic income.
-        <br>
-        <br>
-        Start adding members to see how it works.
-      </p>
-    </div>
-    <footer style="background: #3B405C;">
-      <div class="gis_footer_wrapper gis_wrapper">
-        <div class="gis_buttons" onclick="add_pledger()">Add Pledger</div>
-        <div class="gis_input_wrapper">
-          <div class="gis_input_field">
-            <label class="gis_input_label">Amount:</label>
-            <input id="amount" type="number" value="10" min="0" step="1"/>
-          </div>
-          <label class="gis_currency">$ USD</label>
-        </div>
-        <div class="gis_buttons" onclick="add_receiver()">Add Receiver</div>
-      </div>
-    </footer>
-  </div>
 </body>
-
 </html>
