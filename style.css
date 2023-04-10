@@ -71,6 +71,12 @@
    background-size: cover;
  }
 
+ .gis_banners {
+   display: flex;
+   align-items: center;
+   flex-direction: column;
+ }
+
  .gis_wrapper {
    width: 1092px;
    max-width: calc(100vw - 32px);
@@ -288,7 +294,8 @@
    border-radius: 4px;
  }
 
- .gis_payment_button, .gis_leave_button {
+ .gis_payment_button,
+ .gis_leave_button {
    background: #0288D1;
    border-radius: 0px 4px 4px 0px;
    font-family: 'Poppins';

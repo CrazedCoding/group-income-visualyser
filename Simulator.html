@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Group Income Simulator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
@@ -16,22 +17,23 @@
       </div>
       <button class="gis_logo_button button" onclick="clear_all()">Reset</button>
     </header>
-    <label id="lock_message"
-      style="border:none; color: #f70!important; visibility:hidden;">Distribution
-      Locked</Label>
-    <div id="body" class="gis_main gis_wrapper">
+    <div class="gis_banners">
+      <label id="gis_lock_message" style="visibility:hidden; height:1em; border:none; color: #f70">Distribution
+        Locked</Label>
       <p class="gis_instruction" id="load_message">
         Group income makes it easy for small communities to voluntarily provide a financial safety net for their
         members.
         <br>
         <br>
-        Members of the group can contribute with monetary (pledges) or non-monetary donations, securing everyone in your
+        Members of the group can contribute with monetary (pledges) or non-monetary donations, securing everyone in
+        your
         group with a basic income.
         <br>
         <br>
         Start adding members to see how it works.
       </p>
-
+    </div>
+    <div id="body" class="gis_main gis_wrapper">
       <div id="gis_canvas_div">
         <div style="width:100%; height: 100%; position: absolute;" id="gis_label_div">
         </div>
@@ -45,7 +47,7 @@
         <div class="gis_input_wrapper">
           <div class="gis_input_field">
             <label class="gis_input_label">Amount:</label>
-            <input id="amount" class="gis_amount" type="number" value="10" min="0" step="1"/>
+            <input id="amount" class="gis_amount" type="number" value="10" min="0" step="1" />
           </div>
           <label class="gis_currency">$ USD</label>
         </div>
@@ -1628,45 +1630,45 @@
           }
         }],
         "programs": [
-        {
-          "name": "payments-program",
-          "uniforms": [{
-            "type": "FLOAT",
-            "name": "width",
-            "value": () => {
-              return pipeline.getContext('image-context').canvas.width;
-            }
-          },
           {
-            "type": "FLOAT",
-            "name": "height",
-            "value": () => {
-              return pipeline.getContext('image-context').canvas.height;
+            "name": "payments-program",
+            "uniforms": [{
+              "type": "FLOAT",
+              "name": "width",
+              "value": () => {
+                return pipeline.getContext('image-context').canvas.width;
+              }
+            },
+            {
+              "type": "FLOAT",
+              "name": "height",
+              "value": () => {
+                return pipeline.getContext('image-context').canvas.height;
+              }
+            },
+            {
+              "type": "VEC_TWO",
+              "name": "mouse_position",
+              "value": () => {
+                return mouse_canvas_position;
+              }
+            },
+            {
+              "type": "FLOAT",
+              "name": "max_amount",
+              "value": () => {
+                return last_max_amount
+              }
+            },
+            {
+              "type": "FLOAT",
+              "name": "max_transferable",
+              "value": () => {
+                return max_transferable ? max_transferable : 1.;
+              }
             }
-          },
-          {
-            "type": "VEC_TWO",
-            "name": "mouse_position",
-            "value": () => {
-              return mouse_canvas_position;
-            }
-          },
-          {
-            "type": "FLOAT",
-            "name": "max_amount",
-            "value": () => {
-              return last_max_amount
-            }
-          },
-          {
-            "type": "FLOAT",
-            "name": "max_transferable",
-            "value": () => {
-              return max_transferable ? max_transferable : 1.;
-            }
-          }
-          ],
-          "fragment": `
+            ],
+            "fragment": `
 precision highp float;
 precision highp int;
 
@@ -1712,7 +1714,7 @@ void main()
     vec3 payment_color = (vec3(208., 222., 234.)*(1.-vUV.w)+vUV.w*vec3(93., 200., 240.))/255.;
     gl_FragColor = vec4(payment_color  *edge+1.-edge, 1.);
 }`,
-          "vertex": `
+            "vertex": `
 precision highp float;
 precision highp int;
 
@@ -1731,7 +1733,7 @@ void main(void) {
     gl_Position = vec4(vPosition*2.-1., 0., 1.);
 }
             `
-        }
+          }
         ],
         "stages": [{
           "name": "payments-stage",
@@ -1780,7 +1782,7 @@ void main(void) {
       var user_index = user_counter++
       event_list.push({
         type: EVENT_TYPES.JOIN,
-        name: "User #"+user_index,
+        name: "User #" + user_index,
         income: income_or_expenses
       })
     }
@@ -2029,10 +2031,13 @@ void main(void) {
       }
 
       if (distribution_locked) {
-        document.getElementById("lock_message").style.visibility = 'visible'
+        document.getElementById("gis_lock_message").style.visibility = 'visible'
       } else {
-        document.getElementById("lock_message").style.visibility = 'hidden'
+        document.getElementById("gis_lock_message").style.visibility = 'hidden'
       }
+
+      if(pledgers.length + receivers.length > 0) document.getElementById("load_message").style.display = 'none';
+      else document.getElementById("load_message").style.display = 'block'
     }
 
     function round_money(amount, digits = 2) {
@@ -2088,7 +2093,7 @@ void main(void) {
       var texcoords = []
 
       var mouse_under = false;
-      for (  i = 0; i < pledgers.length; i++) {
+      for (i = 0; i < pledgers.length; i++) {
         var pledger = pledgers[i]
 
         var avg_x = .5 / 3.;
@@ -2113,7 +2118,7 @@ void main(void) {
               <label style="display:inline-block;">Amount:</label>
             <input id="pledge_amount" type="number" value="` + pledger.last_income + `" step="1" style="display:inline-block; width:64px">`
 
-              show_option("<label class='gis_options_title'>" + pledger.name + "</label>"+
+              show_option("<label class='gis_options_title'>" + pledger.name + "</label>" +
                 "<br><button class='gis_leave_button' onclick=\"user_leave_event(\'" + pledger.name + "\')\">Make Leave</button>");
             }
           }(pledger)
@@ -2216,7 +2221,7 @@ void main(void) {
 
           var make_payment = `<div class="gis_payment_wrapper"> <span class="gis_currency_input">$
 									<input id="payment_amount` + i + `" type="number" value="` + payment.amount + `" max="` + payment.amount + `"step="1" class="gis_payment_input"></span>`
-          payment_message += (payment_message ? "<br>" : "") + "<label class='gis_options_title'>Send Payment</label><br>"+ make_payment +
+          payment_message += (payment_message ? "<br>" : "") + "<label class='gis_options_title'>Send Payment</label><br>" + make_payment +
             "<button class='gis_payment_button' onclick=\"document.getElementById('gis_options_div').style.display='hidden'; hide_option(); user_pay_event(\'" + payment.from + "\', \'" + payment.to + "\', parseFloat(document.getElementById('payment_amount" + i + "').value))\">Send Payment</button></div>"
 
           payment_clicked = function () {
@@ -2320,14 +2325,14 @@ void main(void) {
             var rgba = 'rgba(' + r + ', ' + g + ', ' + b + ', 255.0)'
 
             var scalar = .25;
-            if(is_receiver) {
-              x -= w*scalar/2;
-              w -= w*scalar;
+            if (is_receiver) {
+              x -= w * scalar / 2;
+              w -= w * scalar;
             } else {
-              x += w*scalar/2;
-              w -= w*scalar;
+              x += w * scalar / 2;
+              w -= w * scalar;
             }
-              
+
 
             return acc + '<div class="wealth_div ' + (is_receiver ? "receiver" : "pledger") + '_div" style="box-shadow: 4px 4px 0px ' + rgba + '; transform:translate(-50%,-50%); position:absolute; text-align:center; display:block; left: ' + x + 'px; top: ' + y + 'px;  width: ' + w + 'px; height: ' + h + 'px; color: #000 !important; background: #fff; border: 1px solid #D0DEEA;"><div class="gis_label_div">' + html + '</div></div>'
           }, "")
