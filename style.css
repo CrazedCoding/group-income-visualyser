@@ -62,12 +62,16 @@
    text-align: center;
  }
 
+ #body {
+    overflow: hidden;
+  }
+
  /* Layout */
  .gis_layout {
    display: grid;
    grid-template-rows: 100px 1fr auto;
    height: 100%;
-   background: url(/images/background.svg) no-repeat;
+   background: url(images/background.svg) no-repeat;
    background-size: cover;
  }
 

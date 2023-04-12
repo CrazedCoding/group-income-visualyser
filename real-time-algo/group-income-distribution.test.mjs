@@ -27,13 +27,31 @@ describe('Test group-income-distribution.js', function () {
   it('Test empty distirbution event list for unadjusted distribution.', function () {
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false })).eql([])
   })
+  it('EVENTS: Visualyser test.', function () {
+    setup = [
+      { type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 10 } },
+      { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: 10 } },
+      { type: 'haveNeedEvent', data: { name: 'u3', haveNeed: -10 } },
+      { type: 'haveNeedEvent', data: { name: 'u4', haveNeed: -10 } },
+      { type: 'userExitsGroupEvent', data: { name: 'u4' } },
+      { type: 'paymentEvent', data: { from: 'u2', to: 'u3', amount: 2.5 } },
+      { type: 'haveNeedEvent', data: { name: 'u5', haveNeed: -10 } },
+      { type: 'paymentEvent', data: { from: 'u1', to: 'u5', amount: 5 } },
+      { type: 'haveNeedEvent', data: { name: 'u6', haveNeed: -10 } }
+    ]
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true })).eql([
+      { amount: 7.5, from: 'u2', to: 'u3', total: 5, partial: true, isLate: false, dueOn: '2021-01' },
+      { amount: 5, from: 'u1', to: 'u5', total: 10, partial: true, isLate: false, dueOn: '2021-01' },
+      { amount: 5, from: 'u2', to: 'u6', total: 5, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
+  })
   it('EVENTS: [u1, u2, u3 and u4] join the group and set haveNeeds of [100, 100, -50, and -50], respectively. Test unadjusted.', function () {
-    setup.splice(setup.length, 0,
+    setup = [
       { type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 100 } },
       { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: 100 } },
       { type: 'haveNeedEvent', data: { name: 'u3', haveNeed: -50 } },
       { type: 'haveNeedEvent', data: { name: 'u4', haveNeed: -50 } }
-    )
+    ]
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false })).eql([
       { amount: 25, from: 'u1', to: 'u3' },
       { amount: 25, from: 'u1', to: 'u4' },
