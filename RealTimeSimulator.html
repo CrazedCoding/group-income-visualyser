@@ -16,7 +16,7 @@
       </div>
       <button class="gis_logo_button button" onclick="clear_all()">Reset</button>
     </header>
-    <div id="body" class="gis_main gis_wrapper">
+    <div id="gis_body" class="gis_main gis_wrapper">
       <p class="gis_instruction" id="load_message">
         Group income makes it easy for small communities to voluntarily provide a financial safety net for their
         members.
@@ -1939,7 +1939,7 @@
     }
   </script>
   <script type="text/javascript">
-    let body = document.getElementById("body")
+    let body = document.getElementById("gis_body")
     String.prototype.hashCode = function () {
       var hash = 0,
         i, chr;
@@ -2607,7 +2607,7 @@ void main(void) {
         options_div.style.display = "block"
         options_div.innerHTML = html;
         options_div.style.top = (mouse_page_position[1] - canvas_div.offsetTop) + "px";
-        options_div.style.left = (mouse_page_position[0] - options_div.offsetWidth / 2.) + "px";
+        options_div.style.left = (mouse_page_position[0] - options_div.offsetWidth / 2.-body.offsetLeft) + "px";
       }
       window.hide_option = () => {
         options_div.style.display = "none"
