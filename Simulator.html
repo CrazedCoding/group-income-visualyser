@@ -2303,7 +2303,7 @@ void main(void) {
       }
       window.show_labels = () => {
         if (label_html) {
-          var html = label_html.reduce((acc, html, index) => {
+          var html = label_html.reduce((acc, label_html, index) => {
             var x = Math.floor(label_positions[index][0] * canvas_div.offsetWidth)
             var y = Math.floor((1. - label_positions[index][1]) * canvas_div.offsetHeight)
             var w = Math.floor(label_positions[index][2] * canvas_div.offsetWidth)
@@ -2311,7 +2311,8 @@ void main(void) {
 
             var is_receiver = index >= pledgers.length
             var user = is_receiver ? receivers[index - pledgers.length] : pledgers[index];
-            var omega = (user.name + "").hashCode() / Math.PI * 2.
+            const hash = (user.name + "").hashCode();
+            var omega = hash / Math.PI * 2.
             var r = (Math.cos(omega) * .5 + .5) * 255;
             var g = (Math.cos(omega + Math.PI * 2. / 3.) * .5 + .5) * 255;
             var b = (Math.cos(omega + Math.PI * 4. / 3.) * .5 + .5) * 255;
@@ -2330,9 +2331,17 @@ void main(void) {
               x += w * scalar / 2;
               w -= w * scalar;
             }
+            const faces = ["profiles/Face 6.png",
+              "profiles/Face 7.png",
+              "profiles/Face 8.png",
+              "profiles/Face 9.png",
+              "profiles/Face 10.png"]
 
-
-            return acc + '<div class="wealth_div ' + (is_receiver ? "receiver" : "pledger") + '_div" style="box-shadow: 4px 4px 0px ' + rgba + '; transform:translate(-50%,-50%); position:absolute; text-align:center; display:block; left: ' + x + 'px; top: ' + y + 'px;  width: ' + w + 'px; height: ' + h + 'px; color: #000 !important; background: #fff; border: 1px solid #D0DEEA;"><div class="gis_label_div">' + html + '</div></div>'
+            return acc + '<div class="wealth_div ' + (is_receiver ? "receiver" : "pledger") + '_div" style="box-shadow: 4px 4px 0px ' + rgba +
+              '; transform:translate(-50%,-50%); position:absolute; text-align:center; left: ' + x + 'px; top: ' + y + 'px; ' +
+              ' width: ' + w + 'px; height: ' + h + 'px; color: #000 !important; background: #fff; border: 1px solid #D0DEEA;">' +
+              '<div style="align-items: center; display:flex; flex-direction: row;  height: 100%; overflow:hidden;">'+
+              '<img class="gis_profile_image" src="'+faces[Math.abs(hash)%faces.length]+'">'+'<div class="gis_label_div">' + label_html + '</div></div></div>'
           }, "")
           html += total_html.reduce((acc, html, index) => {
             var x = Math.floor(total_positions[index][0] * canvas_div.offsetWidth)

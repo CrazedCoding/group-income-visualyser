@@ -145,9 +145,12 @@
 
  .gis_label_div {
    width: fit-content;
-   top: 50%;
    position: relative;
-   transform: translate(0%, -50%)
+ }
+
+ .gis_profile_image {
+  max-height:64px;
+  margin: 8px;
  }
 
  #gis_options_div {
@@ -227,7 +230,8 @@
    background: #FFFFFF;
    border: 1px solid #D0DEEA;
    border-radius: 4px;
-   box-shadow: 4px 4px 0px
+   box-shadow: 4px 4px 0px;
+   overflow: hidden;
  }
 
  .distribution_div {

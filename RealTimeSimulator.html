@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Group Income Simulator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
@@ -42,7 +43,7 @@
         <div class="gis_input_wrapper">
           <div class="gis_input_field">
             <label class="gis_input_label">Amount:</label>
-            <input id="amount" class="gis_amount" type="number" value="10" min="0" step="1"/>
+            <input id="amount" class="gis_amount" type="number" value="10" min="0" step="1" />
           </div>
           <label class="gis_currency">$ USD</label>
         </div>
@@ -2116,7 +2117,7 @@ void main(void) {
       var user_index = user_counter++
       event_list.push({
         type: EVENT_TYPES.JOIN,
-        name: "User #"+user_index,
+        name: "User #" + user_index,
         income: income_or_expenses
       })
     }
@@ -2431,7 +2432,7 @@ void main(void) {
               <label style="display:inline-block;">Amount:</label>
             <input id="pledge_amount" type="number" value="` + pledger.last_income + `" step="1" style="display:inline-block; width:64px">`
 
-              show_option("<label class='gis_options_title'>" + pledger.name + "</label>"+
+              show_option("<label class='gis_options_title'>" + pledger.name + "</label>" +
                 "<br><button class='gis_leave_button' onclick=\"user_leave_event(\'" + pledger.name + "\')\">Make Leave</button>");
             }
           }(pledger)
@@ -2530,7 +2531,7 @@ void main(void) {
 
           var make_payment = `<div class="gis_payment_wrapper"> <span class="gis_currency_input">$
 									<input id="payment_amount` + i + `" type="number" value="` + payment.amount + `" max="` + payment.amount + `"step="1" class="gis_payment_input"></span>`
-          payment_message += (payment_message ? "<br>" : "") + "<label class='gis_options_title'>Send Payment</label><br>"+ make_payment +
+          payment_message += (payment_message ? "<br>" : "") + "<label class='gis_options_title'>Send Payment</label><br>" + make_payment +
             "<button class='gis_payment_button' onclick=\"document.getElementById('gis_options_div').style.display='hidden'; hide_option(); user_pay_event(\'" + payment.from + "\', \'" + payment.to + "\', parseFloat(document.getElementById('payment_amount" + i + "').value))\">Send Payment</button></div>"
 
           payment_clicked = function () {
@@ -2607,14 +2608,14 @@ void main(void) {
         options_div.style.display = "block"
         options_div.innerHTML = html;
         options_div.style.top = (mouse_page_position[1] - canvas_div.offsetTop) + "px";
-        options_div.style.left = (mouse_page_position[0] - options_div.offsetWidth / 2.-body.offsetLeft) + "px";
+        options_div.style.left = (mouse_page_position[0] - options_div.offsetWidth / 2. - body.offsetLeft) + "px";
       }
       window.hide_option = () => {
         options_div.style.display = "none"
       }
       window.show_labels = () => {
         if (label_html) {
-          var html = label_html.reduce((acc, html, index) => {
+          var html = label_html.reduce((acc, label_html, index) => {
             var x = Math.floor(label_positions[index][0] * canvas_div.offsetWidth)
             var y = Math.floor((1. - label_positions[index][1]) * canvas_div.offsetHeight)
             var w = Math.floor(label_positions[index][2] * canvas_div.offsetWidth)
@@ -2622,7 +2623,8 @@ void main(void) {
 
             var is_receiver = index >= pledgers.length
             var user = is_receiver ? receivers[index - pledgers.length] : pledgers[index];
-            var omega = (user.name + "").hashCode() / Math.PI * 2.
+            const hash = (user.name + "").hashCode();
+            var omega = hash / Math.PI * 2.
             var r = (Math.cos(omega) * .5 + .5) * 255;
             var g = (Math.cos(omega + Math.PI * 2. / 3.) * .5 + .5) * 255;
             var b = (Math.cos(omega + Math.PI * 4. / 3.) * .5 + .5) * 255;
@@ -2641,9 +2643,17 @@ void main(void) {
               x += w * scalar / 2;
               w -= w * scalar;
             }
+            const faces = ["profiles/Face 6.png",
+              "profiles/Face 7.png",
+              "profiles/Face 8.png",
+              "profiles/Face 9.png",
+              "profiles/Face 10.png"]
 
-
-            return acc + '<div class="wealth_div ' + (is_receiver ? "receiver" : "pledger") + '_div" style="box-shadow: 4px 4px 0px ' + rgba + '; transform:translate(-50%,-50%); position:absolute; text-align:center; display:block; left: ' + x + 'px; top: ' + y + 'px;  width: ' + w + 'px; height: ' + h + 'px; color: #000 !important; background: #fff; border: 1px solid #D0DEEA;"><div class="gis_label_div">' + html + '</div></div>'
+            return acc + '<div class="wealth_div ' + (is_receiver ? "receiver" : "pledger") + '_div" style="box-shadow: 4px 4px 0px ' + rgba +
+              '; transform:translate(-50%,-50%); position:absolute; text-align:center; left: ' + x + 'px; top: ' + y + 'px; ' +
+              ' width: ' + w + 'px; height: ' + h + 'px; color: #000 !important; background: #fff; border: 1px solid #D0DEEA;">' +
+              '<div style="align-items: center; display:flex; flex-direction: row;  height: 100%; overflow:hidden;">'+
+              '<img class="gis_profile_image" src="'+faces[Math.abs(hash)%faces.length]+'">'+'<div class="gis_label_div">' + label_html + '</div></div></div>'
           }, "")
           html += total_html.reduce((acc, html, index) => {
             var x = Math.floor(total_positions[index][0] * canvas_div.offsetWidth)
@@ -2668,4 +2678,5 @@ void main(void) {
     }
   </script>
 </body>
+
 </html>
