@@ -141,6 +141,7 @@
    font-size: 14px;
    font-weight: 700;
    color: #3E4462;
+   cursor: pointer;
  }
 
  .gis_label_div {
@@ -180,13 +181,13 @@
 
  /* Body */
  .gis_instruction {
+   max-width: 100%;
    width: 540px;
    padding: 20px;
    font-weight: 400;
-   font-size: 18px;
+   font-size: 16px;
    text-align: center;
  }
-
  /* Canvas */
  #gis_canvas_div {
    position: relative;
@@ -271,6 +272,7 @@
    font-weight: 800;
    font-size: 16px;
    line-height: 20px;
+   cursor: pointer;
  }
 
  .gis_currency {
@@ -283,7 +285,7 @@
 
  .gis_footer {
    background: #3B405C;
-   min-height: 100px;
+   min-height: 50px;
    padding: 8px;
    box-sizing: border-box;
  }
@@ -335,3 +337,10 @@
    border: 0;
    width: 48px;
  }
+
+
+ @media (orientation: landscape) {
+  .gis_footer_wrapper > * {
+    max-width: 25%;
+  }
+}
